@@ -20,15 +20,21 @@
         .stats-active #page-stats { transform: translateX(0); }
 
         .card-container { perspective: 1000px; width: 100%; height: 250px; cursor: pointer; }
-        .card-inner { position: relative; width: 100%; height: 100%; text-align: center; transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1); transform-style: preserve-3d; }
+        .card-inner { position: relative; width: 100%; height: 100%; transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1); transform-style: preserve-3d; }
         .is-flipped .card-inner { transform: rotateY(180deg); }
-        .card-face { position: absolute; width: 100%; height: 100%; -webkit-backface-visibility: hidden; backface-visibility: hidden; display: flex; align-items: center; justify-content: center; border-radius: 2.5rem; padding: 2rem; box-shadow: 0 15px 30px rgba(0,0,0,0.08); }
+        
+        /* 카드 앞/뒷면 공통 레이아웃 수정 */
+        .card-face { 
+            position: absolute; width: 100%; height: 100%; 
+            -webkit-backface-visibility: hidden; backface-visibility: hidden; 
+            display: flex; flex-direction: column; align-items: center; justify-content: center; 
+            border-radius: 2.5rem; padding: 2rem; box-shadow: 0 15px 30px rgba(0,0,0,0.08); 
+        }
         .card-front { background: white; color: #1e293b; border: 1px solid rgba(0,0,0,0.03); }
         .card-back { background: #4f46e5; color: white; transform: rotateY(180deg); }
         
         .lang-btn { transition: all 0.2s; opacity: 0.4; font-size: 0.7rem; font-weight: 800; border-bottom: 2px solid transparent; cursor: pointer; }
         .lang-btn.active { opacity: 1; color: #4f46e5; border-bottom: 2px solid #4f46e5; }
-        .btn-main:active { transform: scale(0.95); }
     </style>
 </head>
 <body>
@@ -49,25 +55,25 @@
 
             <div class="card-container mb-8" id="card" onclick="this.classList.toggle('is-flipped')">
                 <div class="card-inner">
-                    <div class="card-face card-front relative">
-                        <button onclick="speakText(event)" class="absolute top-6 right-6 w-10 h-10 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center shadow-sm active:scale-90 transition-all border border-indigo-100">
+                    <div class="card-face card-front">
+                        <button onclick="speakText(event)" class="absolute top-6 right-6 w-10 h-10 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center shadow-sm active:scale-90 transition-all">
                             <span class="text-lg">🔊</span>
                         </button>
-                        <p id="eng-text" class="text-xl font-bold break-keep italic px-4">Loading...</p>
+                        <p id="eng-text" class="text-xl font-bold break-keep italic text-center">Loading...</p>
                     </div>
                     <div class="card-face card-back">
-                        <p id="kor-text" class="text-lg font-medium break-keep">해석</p>
+                        <p id="kor-text" class="text-lg font-medium break-keep text-center">해석</p>
                     </div>
                 </div>
             </div>
 
             <div class="grid grid-cols-3 gap-2 mb-6">
-                <button onclick="openModal('add')" class="btn-main bg-white text-indigo-600 py-4 rounded-2xl font-bold shadow-sm text-xs">Add +</button>
-                <button onclick="openModal('manage')" class="btn-main bg-white text-gray-400 py-4 rounded-2xl font-bold shadow-sm text-xs">Edit</button>
-                <button onclick="showRandom(event, true)" class="btn-main bg-indigo-600 text-white py-4 rounded-2xl font-bold shadow-lg text-xs">Next ➔</button>
+                <button onclick="openModal('add')" class="bg-white text-indigo-600 py-4 rounded-2xl font-bold shadow-sm text-xs">Add +</button>
+                <button onclick="openModal('manage')" class="bg-white text-gray-400 py-4 rounded-2xl font-bold shadow-sm text-xs">Edit</button>
+                <button onclick="showRandom(event, true)" class="bg-indigo-600 text-white py-4 rounded-2xl font-bold shadow-lg text-xs">Next ➔</button>
             </div>
 
-            <button onclick="switchPage('stats')" class="mt-auto text-[10px] font-black text-gray-400 uppercase tracking-widest text-center hover:text-indigo-500 py-2">
+            <button onclick="switchPage('stats')" class="mt-auto text-[10px] font-black text-gray-400 uppercase tracking-widest text-center py-2">
                 2026 Study Analysis 📊
             </button>
         </div>
@@ -75,41 +81,35 @@
         <div id="page-stats" class="page">
             <div class="flex justify-between items-center mb-8">
                 <h2 class="text-xl font-black text-indigo-900">Analysis</h2>
-                <button onclick="switchPage('timer')" class="text-xs font-bold text-rose-500 bg-rose-50 px-3 py-1 rounded-full">✕ Close</button>
+                <button onclick="switchPage('timer')" class="text-xs font-bold text-rose-500">✕ Close</button>
             </div>
-
-            <div class="bg-white/60 rounded-[2rem] p-6 mb-6 shadow-inner border border-white/20">
-                <p class="text-[10px] font-bold text-gray-400 uppercase mb-4 text-center tracking-widest">Language Investment</p>
+            <div class="bg-white/60 rounded-[2rem] p-6 mb-6 shadow-inner">
                 <div class="relative h-48">
                     <canvas id="langChart"></canvas>
                 </div>
             </div>
-
-            <div id="stats-summary" class="space-y-3 overflow-y-auto pr-1">
-                </div>
-
-            <p class="mt-auto text-center text-[10px] text-gray-400 font-medium italic">"Consistency is the path to mastery."</p>
+            <div id="stats-summary" class="space-y-3 overflow-y-auto pr-1"></div>
+            <p class="mt-auto text-center text-[10px] text-gray-400 font-medium italic">"Every flip counts."</p>
         </div>
     </div>
 
     <div id="modal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-6 z-50">
-        <div class="bg-white w-full max-w-xs rounded-[2.5rem] p-8 shadow-2xl">
+        <div class="bg-white w-full max-w-xs rounded-[2.5rem] p-8">
             <div id="modal-add" class="hidden">
-                <h2 class="text-lg font-bold mb-4 text-indigo-600"><span id="add-lang-label"></span> 추가 ✍️</h2>
-                <input type="text" id="new-text" placeholder="Foreign Sentence" class="w-full bg-gray-100 rounded-xl p-4 mb-2 outline-none focus:ring-2 focus:ring-indigo-400">
-                <input type="text" id="new-kor" placeholder="Meaning (Korean)" class="w-full bg-gray-100 rounded-xl p-4 mb-6 outline-none focus:ring-2 focus:ring-indigo-400">
-                <button onclick="addNew()" class="w-full py-4 bg-indigo-600 text-white rounded-xl font-bold shadow-lg active:scale-95 transition-transform">저장하기</button>
+                <h2 class="text-lg font-bold mb-4 text-indigo-600"><span id="add-lang-label"></span> 추가</h2>
+                <input type="text" id="new-text" placeholder="Sentence" class="w-full bg-gray-100 rounded-xl p-4 mb-2 outline-none">
+                <input type="text" id="new-kor" placeholder="Meaning" class="w-full bg-gray-100 rounded-xl p-4 mb-6 outline-none">
+                <button onclick="addNew()" class="w-full py-4 bg-indigo-600 text-white rounded-xl font-bold">저장</button>
             </div>
-            <div id="modal-manage" class="hidden text-center">
-                <h2 class="font-bold mb-4 text-gray-700">카드 목록 관리 📚</h2>
-                <div id="manage-list" class="max-h-48 overflow-y-auto mb-6 space-y-2 pr-1 text-left"></div>
-                <button onclick="closeModal()" class="text-gray-400 font-bold hover:text-gray-600 py-2">닫기</button>
+            <div id="modal-manage" class="hidden">
+                <h2 class="font-bold mb-4 text-center">카드 관리</h2>
+                <div id="manage-list" class="max-h-48 overflow-y-auto mb-6 space-y-2"></div>
+                <button onclick="closeModal()" class="w-full text-gray-400 font-bold">닫기</button>
             </div>
         </div>
     </div>
 
     <script>
-        // 초기 데이터 및 상태
         let db = JSON.parse(localStorage.getItem('polyglot_v2')) || {
             EN: [{eng: "Consistency is key.", kor: "꾸준함이 답이다.", hits: 0}],
             JP: [{eng: "継続は力なり", kor: "계속하는 것이 힘이다.", hits: 0}],
@@ -123,12 +123,14 @@
 
         function save() { localStorage.setItem('polyglot_v2', JSON.stringify(db)); }
 
-        // 1. 발음 재생 함수 (스피커 클릭 시에만)
+        // 모바일 대응 음성 출력
         function speakText(e) {
-            if(e) e.stopPropagation(); // 카드 뒤집힘 방지
+            if(e) e.stopPropagation();
             const text = document.getElementById('eng-text').innerText;
-            if(!text || text === "Loading..." || text === "Empty!") return;
+            if(!text || text === "Loading...") return;
 
+            // 모바일 음성 엔진 초기화 로직
+            window.speechSynthesis.cancel(); 
             const utterance = new SpeechSynthesisUtterance(text);
             const langMap = { 'EN': 'en-US', 'JP': 'ja-JP', 'DE': 'de-DE', 'FR': 'fr-FR' };
             utterance.lang = langMap[currentLang];
@@ -136,17 +138,18 @@
             window.speechSynthesis.speak(utterance);
         }
 
-        // 2. 카드 랜덤 추출 함수 (Next 버튼 클릭)
+        function changeLang(lang) {
+            currentLang = lang;
+            currentIdx = -1;
+            updateUI();
+            showRandom(null, false);
+        }
+
         function showRandom(e, isStudy) {
             if(e) e.stopPropagation();
             const list = db[currentLang];
-            if(list.length === 0) {
-                document.getElementById('eng-text').innerText = "Empty!";
-                document.getElementById('kor-text').innerText = "문장을 추가해주세요.";
-                return;
-            };
+            if(list.length === 0) return;
 
-            // 통계용 점수 추가 (자동 발음 없음)
             if(isStudy && currentIdx !== -1) {
                 list[currentIdx].hits = (list[currentIdx].hits || 0) + 1;
                 save();
@@ -162,32 +165,16 @@
             }, 150);
         }
 
-        // 언어 전환
-        function changeLang(lang) {
-            currentLang = lang;
-            currentIdx = -1;
-            updateUI();
-            showRandom(null, false);
-        }
-
-        function updateUI() {
-            ['EN','JP','DE','FR'].forEach(l => document.getElementById(`btn-${l}`).classList.toggle('active', l === currentLang));
-            document.getElementById('current-lang-title').innerText = 
-                currentLang === 'EN' ? 'ENGLISH' : currentLang === 'JP' ? 'JAPANESE' : currentLang === 'DE' ? 'GERMAN' : 'FRENCH';
-        }
-
-        // 페이지 전환 (학습 <-> 분석)
         function switchPage(to) {
             const container = document.getElementById('main-container');
             if(to === 'stats') {
                 container.classList.add('stats-active');
-                renderChart();
+                setTimeout(renderChart, 100); // 페이지 전환 애니메이션 후 차트 렌더링
             } else {
                 container.classList.remove('stats-active');
             }
         }
 
-        // 분석 차트 렌더링
         function renderChart() {
             const ctx = document.getElementById('langChart').getContext('2d');
             const langs = ['EN', 'JP', 'DE', 'FR'];
@@ -201,24 +188,22 @@
                     labels: langs,
                     datasets: [{ data: data, backgroundColor: colors, borderWidth: 0 }]
                 },
-                options: { 
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 10 } } } }, 
-                    cutout: '70%' 
-                }
+                options: { responsive: true, maintainAspectRatio: false, cutout: '70%', plugins: { legend: { position: 'bottom' } } }
             });
 
             const summary = document.getElementById('stats-summary');
             summary.innerHTML = langs.map((l, i) => `
-                <div class="flex justify-between items-center bg-white/50 p-3 rounded-xl border border-white/20">
-                    <span class="text-xs font-bold text-gray-500">${l} Card Flips</span>
-                    <span class="font-black text-indigo-600">${data[i]} <small class="text-[10px] text-gray-400 ml-1 font-normal italic">times</small></span>
-                </div>
-            `).join('');
+                <div class="flex justify-between items-center bg-white/50 p-3 rounded-xl">
+                    <span class="text-xs font-bold text-gray-500">${l}</span>
+                    <span class="font-black text-indigo-600">${data[i]} flips</span>
+                </div>`).join('');
         }
 
-        // 모달 관리 로직
+        function updateUI() {
+            ['EN','JP','DE','FR'].forEach(l => document.getElementById(`btn-${l}`).classList.toggle('active', l === currentLang));
+            document.getElementById('current-lang-title').innerText = currentLang;
+        }
+
         function openModal(type) {
             document.getElementById('modal').classList.remove('hidden');
             if(type === 'add') {
@@ -231,42 +216,28 @@
                 renderManageList();
             }
         }
-
         function closeModal() { document.getElementById('modal').classList.add('hidden'); }
-
         function addNew() {
-            const eng = document.getElementById('new-text').value.trim();
-            const kor = document.getElementById('new-kor').value.trim();
+            const eng = document.getElementById('new-text').value;
+            const kor = document.getElementById('new-kor').value;
             if(eng && kor) {
                 db[currentLang].push({eng, kor, hits: 0});
-                save(); 
-                closeModal();
+                save(); closeModal(); showRandom(null, false);
                 document.getElementById('new-text').value = '';
                 document.getElementById('new-kor').value = '';
-                showRandom(null, false);
             }
         }
-
         function renderManageList() {
             const list = document.getElementById('manage-list');
             list.innerHTML = db[currentLang].map((s, i) => `
-                <div class="flex justify-between items-center bg-gray-50 p-3 rounded-xl border border-gray-100">
-                    <div class="flex flex-col overflow-hidden mr-2">
-                        <span class="font-bold text-indigo-600 truncate w-32">${s.eng}</span>
-                        <span class="text-[10px] text-gray-400 truncate w-32">${s.kor}</span>
-                    </div>
-                    <button onclick="deleteItem(${i})" class="text-[10px] text-rose-500 font-bold bg-rose-50 px-2 py-1 rounded-lg flex-shrink-0">삭제</button>
-                </div>
-            `).join('');
+                <div class="flex justify-between items-center bg-gray-50 p-2 rounded-lg text-[10px]">
+                    <span class="truncate w-32">${s.eng}</span>
+                    <button onclick="deleteItem(${i})" class="text-rose-500 font-bold">삭제</button>
+                </div>`).join('');
         }
-
         function deleteItem(i) {
-            if(confirm('이 카드를 삭제할까요?')) {
-                db[currentLang].splice(i, 1);
-                save(); 
-                renderManageList();
-                showRandom(null, false);
-            }
+            db[currentLang].splice(i, 1);
+            save(); renderManageList();
         }
 
         window.onload = () => { updateUI(); showRandom(null, false); };
