@@ -19,6 +19,7 @@
         .card-back { background: #4f46e5; color: white; transform: rotateY(180deg); }
         .btn-main { transition: all 0.2s; -webkit-tap-highlight-color: transparent; }
         .btn-main:active { transform: scale(0.95); }
+        .modal-scroll { max-height: 60vh; overflow-y: auto; }
     </style>
 </head>
 <body class="p-4">
@@ -26,13 +27,13 @@
     <div class="flex flex-col items-center w-full max-w-sm">
         <div class="mb-8 text-center">
             <h1 class="text-2xl font-black text-indigo-600 tracking-tight">Flip English 2026</h1>
-            <p id="counter" class="text-gray-500 text-xs mt-1">남은 문장: 0개</p>
+            <p id="counter" class="text-gray-500 text-xs mt-1">총 문장: 0개</p>
         </div>
 
         <div class="card-container mb-10" id="card" onclick="this.classList.toggle('is-flipped')">
             <div class="card-inner" id="card-inner">
                 <div class="card-face card-front">
-                    <p id="eng-text" class="text-2xl font-bold break-keep">문장을 추가해주세요!</p>
+                    <p id="eng-text" class="text-2xl font-bold break-keep italic">문장을 추가해주세요!</p>
                 </div>
                 <div class="card-face card-back">
                     <p id="kor-text" class="text-xl font-medium break-keep">해석이 여기에 나타납니다.</p>
@@ -40,26 +41,35 @@
             </div>
         </div>
 
-        <div class="flex gap-4 w-full px-4">
-            <button onclick="openModal()" class="btn-main flex-1 bg-white text-indigo-600 py-4 rounded-2xl font-bold shadow-md border border-indigo-100">Add +</button>
-            <button onclick="showRandom(event)" class="btn-main flex-[2] bg-indigo-600 text-white py-4 rounded-2xl font-bold shadow-lg shadow-indigo-200">Next ➔</button>
+        <div class="grid grid-cols-3 gap-3 w-full px-2">
+            <button onclick="openModal('add')" class="btn-main bg-white text-indigo-600 py-4 rounded-2xl font-bold shadow-md border border-indigo-100 text-sm">Add +</button>
+            <button onclick="openModal('manage')" class="btn-main bg-white text-gray-500 py-4 rounded-2xl font-bold shadow-md border border-gray-100 text-sm">Manage</button>
+            <button onclick="showRandom(event)" class="btn-main bg-indigo-600 text-white py-4 rounded-2xl font-bold shadow-lg shadow-indigo-200 text-sm">Next ➔</button>
         </div>
     </div>
 
-    <div id="modal" class="hidden fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-6 z-50">
-        <div class="bg-white w-full max-w-xs rounded-3xl p-6 shadow-2xl">
-            <h2 class="text-lg font-bold mb-4">새 문장 추가</h2>
-            <input type="text" id="new-eng" placeholder="English Sentence" class="w-full border-none bg-gray-100 rounded-xl p-3 mb-3 outline-none focus:ring-2 focus:ring-indigo-400">
-            <input type="text" id="new-kor" placeholder="한글 해석" class="w-full border-none bg-gray-100 rounded-xl p-3 mb-6 outline-none focus:ring-2 focus:ring-indigo-400">
-            <div class="flex gap-2">
-                <button onclick="closeModal()" class="flex-1 py-3 text-gray-400 font-bold">취소</button>
-                <button onclick="addNew()" class="flex-1 py-3 bg-indigo-600 text-white rounded-xl font-bold">저장</button>
+    <div id="modal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-6 z-50">
+        <div class="bg-white w-full max-w-sm rounded-[2.5rem] p-8 shadow-2xl">
+            <div id="modal-add" class="hidden">
+                <h2 class="text-xl font-black mb-6">새 표현 기록 ✍️</h2>
+                <input type="text" id="new-eng" placeholder="English Sentence" class="w-full border-none bg-gray-100 rounded-2xl p-4 mb-3 outline-none focus:ring-2 focus:ring-indigo-400">
+                <input type="text" id="new-kor" placeholder="한글 해석" class="w-full border-none bg-gray-100 rounded-2xl p-4 mb-8 outline-none focus:ring-2 focus:ring-indigo-400">
+                <div class="flex gap-3">
+                    <button onclick="closeModal()" class="flex-1 py-4 text-gray-400 font-bold">취소</button>
+                    <button onclick="addNew()" class="flex-1 py-4 bg-indigo-600 text-white rounded-2xl font-bold shadow-lg shadow-indigo-200">저장하기</button>
+                </div>
+            </div>
+
+            <div id="modal-manage" class="hidden">
+                <h2 class="text-xl font-black mb-6 italic">My Cards 📚</h2>
+                <div id="manage-list" class="modal-scroll space-y-3 pr-2 mb-6">
+                    </div>
+                <button onclick="closeModal()" class="w-full py-4 bg-gray-100 text-gray-600 rounded-2xl font-bold">닫기</button>
             </div>
         </div>
     </div>
 
     <script>
-        // 초기 데이터 (데이터가 없을 때만 사용)
         const defaultData = [
             { eng: "Think outside the box.", kor: "고정관념에서 벗어나서 생각해요." },
             { eng: "It's a piece of cake.", kor: "식은 죽 먹기죠." }
@@ -75,6 +85,7 @@
 
         function showRandom(e) {
             if(e) e.stopPropagation();
+            if(sentences.length === 0) return;
             const card = document.getElementById('card');
             card.classList.remove('is-flipped');
 
@@ -89,10 +100,22 @@
             }, 150);
         }
 
-        // 모달 관리
-        function openModal() { document.getElementById('modal').classList.remove('hidden'); }
+        // 모달 열기/닫기
+        function openModal(type) {
+            document.getElementById('modal').classList.remove('hidden');
+            if(type === 'add') {
+                document.getElementById('modal-add').classList.remove('hidden');
+                document.getElementById('modal-manage').classList.add('hidden');
+            } else {
+                document.getElementById('modal-add').classList.add('hidden');
+                document.getElementById('modal-manage').classList.remove('hidden');
+                renderManageList();
+            }
+        }
+
         function closeModal() { document.getElementById('modal').classList.add('hidden'); }
-        
+
+        // 추가
         function addNew() {
             const eng = document.getElementById('new-eng').value.trim();
             const kor = document.getElementById('new-kor').value.trim();
@@ -102,7 +125,54 @@
                 closeModal();
                 document.getElementById('new-eng').value = '';
                 document.getElementById('new-kor').value = '';
-                alert('추가 완료!');
+                showRandom();
+            }
+        }
+
+        // 관리 리스트 렌더링 (수정/삭제)
+        function renderManageList() {
+            const list = document.getElementById('manage-list');
+            list.innerHTML = '';
+            sentences.forEach((s, idx) => {
+                const item = document.createElement('div');
+                item.className = "bg-gray-50 p-4 rounded-2xl flex justify-between items-center gap-3 border border-gray-100";
+                item.innerHTML = `
+                    <div class="flex-1 overflow-hidden">
+                        <p class="font-bold text-sm text-indigo-600 truncate">${s.eng}</p>
+                        <p class="text-xs text-gray-400 truncate">${s.kor}</p>
+                    </div>
+                    <div class="flex gap-2 shrink-0">
+                        <button onclick="editItem(${idx})" class="text-xs bg-indigo-50 text-indigo-600 px-3 py-1 rounded-lg font-bold">수정</button>
+                        <button onclick="deleteItem(${idx})" class="text-xs bg-rose-50 text-rose-500 px-3 py-1 rounded-lg font-bold">삭제</button>
+                    </div>
+                `;
+                list.appendChild(item);
+            });
+        }
+
+        // 삭제
+        function deleteItem(idx) {
+            if(confirm('이 문장을 삭제할까요?')) {
+                sentences.splice(idx, 1);
+                updateUI();
+                renderManageList();
+                if(sentences.length > 0) showRandom();
+                else {
+                    document.getElementById('eng-text').innerText = "문장을 추가해주세요!";
+                    document.getElementById('kor-text').innerText = "해석이 여기에 나타납니다.";
+                }
+            }
+        }
+
+        // 수정
+        function editItem(idx) {
+            const newEng = prompt("영어 문장 수정:", sentences[idx].eng);
+            const newKor = prompt("한글 해석 수정:", sentences[idx].kor);
+            if(newEng && newKor) {
+                sentences[idx] = { eng: newEng, kor: newKor };
+                updateUI();
+                renderManageList();
+                showRandom();
             }
         }
 
