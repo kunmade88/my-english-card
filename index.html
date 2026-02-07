@@ -124,7 +124,6 @@
 
         function save() { localStorage.setItem('polyglot_v2', JSON.stringify(db)); }
 
-        // 안드로이드 최적화 음성 출력
         function speakText(e) {
             if(e) e.stopPropagation();
             const text = document.getElementById('eng-text').innerText;
@@ -139,12 +138,13 @@
             window.speechSynthesis.speak(utterance);
         }
 
-        // Getyarn 영상 검색
+        // 🎬 yarn.co 검색 주소로 변경됨
         function searchVideo() {
             const text = document.getElementById('eng-text').innerText;
             if(!text || text === "Loading..." || text === "Empty!") return;
+            // 특수문자 제거 후 인코딩
             const cleanText = encodeURIComponent(text.replace(/[.,!?]/g, ""));
-            window.open(`https://www.getyarn.io/yarn-find?text=${cleanText}`, '_blank');
+            window.open(`https://yarn.co/yarn-find?text=${cleanText}`, '_blank');
         }
 
         function changeLang(lang) {
@@ -213,7 +213,8 @@
 
         function updateUI() {
             ['EN','JP','DE','FR'].forEach(l => document.getElementById(`btn-${l}`).classList.toggle('active', l === currentLang));
-            document.getElementById('current-lang-title').innerText = currentLang === 'EN' ? 'ENGLISH' : currentLang === 'JP' ? 'JAPANESE' : currentLang === 'DE' ? 'GERMAN' : 'FRENCH';
+            const langNames = { 'EN': 'ENGLISH', 'JP': 'JAPANESE', 'DE': 'GERMAN', 'FR': 'FRENCH' };
+            document.getElementById('current-lang-title').innerText = langNames[currentLang];
         }
 
         function openModal(type) {
