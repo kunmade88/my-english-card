@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>2026 Flip English Pro</title>
+    <title>2026 Polyglot Master</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body {
@@ -11,101 +12,219 @@
             display: flex; align-items: center; justify-content: center;
             min-height: 100vh; margin: 0; font-family: 'Pretendard', sans-serif;
         }
-        .card-container { perspective: 1000px; width: 90%; max-width: 400px; height: 280px; cursor: pointer; }
+        .page-container { position: relative; width: 100%; max-width: 400px; height: 620px; overflow: hidden; }
+        .page { position: absolute; inset: 0; transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1); padding: 1.5rem; display: flex; flex-direction: column; }
+        #page-timer { transform: translateX(0); }
+        #page-stats { transform: translateX(100%); }
+        .stats-active #page-timer { transform: translateX(-100%); }
+        .stats-active #page-stats { transform: translateX(0); }
+
+        .card-container { perspective: 1000px; width: 100%; height: 250px; cursor: pointer; }
         .card-inner { position: relative; width: 100%; height: 100%; text-align: center; transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1); transform-style: preserve-3d; }
         .is-flipped .card-inner { transform: rotateY(180deg); }
-        .card-face { position: absolute; width: 100%; height: 100%; -webkit-backface-visibility: hidden; backface-visibility: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center; border-radius: 2.5rem; padding: 2rem; box-shadow: 0 20px 40px rgba(0,0,0,0.1); }
-        .card-front { background: white; border: 1px solid rgba(0,0,0,0.05); color: #1e293b; }
+        .card-face { position: absolute; width: 100%; height: 100%; -webkit-backface-visibility: hidden; backface-visibility: hidden; display: flex; align-items: center; justify-content: center; border-radius: 2.5rem; padding: 2rem; box-shadow: 0 15px 30px rgba(0,0,0,0.08); }
+        .card-front { background: white; color: #1e293b; border: 1px solid rgba(0,0,0,0.03); }
         .card-back { background: #4f46e5; color: white; transform: rotateY(180deg); }
-        .btn-main { transition: all 0.2s; -webkit-tap-highlight-color: transparent; }
+        
+        .lang-btn { transition: all 0.2s; opacity: 0.4; font-size: 0.7rem; font-weight: 800; border-bottom: 2px solid transparent; cursor: pointer; }
+        .lang-btn.active { opacity: 1; color: #4f46e5; border-bottom: 2px solid #4f46e5; }
         .btn-main:active { transform: scale(0.95); }
-        .modal-scroll { max-height: 60vh; overflow-y: auto; }
     </style>
 </head>
-<body class="p-4">
+<body>
 
-    <div class="flex flex-col items-center w-full max-w-sm">
-        <div class="mb-8 text-center">
-            <h1 class="text-2xl font-black text-indigo-600 tracking-tight">Flip English 2026</h1>
-            <p id="counter" class="text-gray-500 text-xs mt-1">총 문장: 0개</p>
-        </div>
+    <div class="page-container bg-white/40 backdrop-blur-md rounded-[3rem] shadow-2xl border border-white/20" id="main-container">
+        
+        <div id="page-timer" class="page">
+            <div class="flex justify-around mb-6 bg-white/30 p-2 rounded-2xl shadow-inner">
+                <button onclick="changeLang('EN')" id="btn-EN" class="lang-btn active py-1">EN</button>
+                <button onclick="changeLang('JP')" id="btn-JP" class="lang-btn py-1">JP</button>
+                <button onclick="changeLang('DE')" id="btn-DE" class="lang-btn py-1">DE</button>
+                <button onclick="changeLang('FR')" id="btn-FR" class="lang-btn py-1">FR</button>
+            </div>
 
-        <div class="card-container mb-10" id="card" onclick="this.classList.toggle('is-flipped')">
-            <div class="card-inner" id="card-inner">
-                <div class="card-face card-front">
-                    <p id="eng-text" class="text-2xl font-bold break-keep italic">문장을 추가해주세요!</p>
-                </div>
-                <div class="card-face card-back">
-                    <p id="kor-text" class="text-xl font-medium break-keep">해석이 여기에 나타납니다.</p>
+            <div class="mb-4 text-center">
+                <h1 id="current-lang-title" class="text-xl font-black text-indigo-600 italic tracking-tighter uppercase">ENGLISH</h1>
+            </div>
+
+            <div class="card-container mb-8" id="card" onclick="this.classList.toggle('is-flipped')">
+                <div class="card-inner">
+                    <div class="card-face card-front relative">
+                        <button onclick="speakText(event)" class="absolute top-6 right-6 w-10 h-10 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center shadow-sm active:scale-90 transition-all border border-indigo-100">
+                            <span class="text-lg">🔊</span>
+                        </button>
+                        <p id="eng-text" class="text-xl font-bold break-keep italic px-4">Loading...</p>
+                    </div>
+                    <div class="card-face card-back">
+                        <p id="kor-text" class="text-lg font-medium break-keep">해석</p>
+                    </div>
                 </div>
             </div>
+
+            <div class="grid grid-cols-3 gap-2 mb-6">
+                <button onclick="openModal('add')" class="btn-main bg-white text-indigo-600 py-4 rounded-2xl font-bold shadow-sm text-xs">Add +</button>
+                <button onclick="openModal('manage')" class="btn-main bg-white text-gray-400 py-4 rounded-2xl font-bold shadow-sm text-xs">Edit</button>
+                <button onclick="showRandom(event, true)" class="btn-main bg-indigo-600 text-white py-4 rounded-2xl font-bold shadow-lg text-xs">Next ➔</button>
+            </div>
+
+            <button onclick="switchPage('stats')" class="mt-auto text-[10px] font-black text-gray-400 uppercase tracking-widest text-center hover:text-indigo-500 py-2">
+                2026 Study Analysis 📊
+            </button>
         </div>
 
-        <div class="grid grid-cols-3 gap-3 w-full px-2">
-            <button onclick="openModal('add')" class="btn-main bg-white text-indigo-600 py-4 rounded-2xl font-bold shadow-md border border-indigo-100 text-sm">Add +</button>
-            <button onclick="openModal('manage')" class="btn-main bg-white text-gray-500 py-4 rounded-2xl font-bold shadow-md border border-gray-100 text-sm">Manage</button>
-            <button onclick="showRandom(event)" class="btn-main bg-indigo-600 text-white py-4 rounded-2xl font-bold shadow-lg shadow-indigo-200 text-sm">Next ➔</button>
+        <div id="page-stats" class="page">
+            <div class="flex justify-between items-center mb-8">
+                <h2 class="text-xl font-black text-indigo-900">Analysis</h2>
+                <button onclick="switchPage('timer')" class="text-xs font-bold text-rose-500 bg-rose-50 px-3 py-1 rounded-full">✕ Close</button>
+            </div>
+
+            <div class="bg-white/60 rounded-[2rem] p-6 mb-6 shadow-inner border border-white/20">
+                <p class="text-[10px] font-bold text-gray-400 uppercase mb-4 text-center tracking-widest">Language Investment</p>
+                <div class="relative h-48">
+                    <canvas id="langChart"></canvas>
+                </div>
+            </div>
+
+            <div id="stats-summary" class="space-y-3 overflow-y-auto pr-1">
+                </div>
+
+            <p class="mt-auto text-center text-[10px] text-gray-400 font-medium italic">"Consistency is the path to mastery."</p>
         </div>
     </div>
 
     <div id="modal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-6 z-50">
-        <div class="bg-white w-full max-w-sm rounded-[2.5rem] p-8 shadow-2xl">
+        <div class="bg-white w-full max-w-xs rounded-[2.5rem] p-8 shadow-2xl">
             <div id="modal-add" class="hidden">
-                <h2 class="text-xl font-black mb-6">새 표현 기록 ✍️</h2>
-                <input type="text" id="new-eng" placeholder="English Sentence" class="w-full border-none bg-gray-100 rounded-2xl p-4 mb-3 outline-none focus:ring-2 focus:ring-indigo-400">
-                <input type="text" id="new-kor" placeholder="한글 해석" class="w-full border-none bg-gray-100 rounded-2xl p-4 mb-8 outline-none focus:ring-2 focus:ring-indigo-400">
-                <div class="flex gap-3">
-                    <button onclick="closeModal()" class="flex-1 py-4 text-gray-400 font-bold">취소</button>
-                    <button onclick="addNew()" class="flex-1 py-4 bg-indigo-600 text-white rounded-2xl font-bold shadow-lg shadow-indigo-200">저장하기</button>
-                </div>
+                <h2 class="text-lg font-bold mb-4 text-indigo-600"><span id="add-lang-label"></span> 추가 ✍️</h2>
+                <input type="text" id="new-text" placeholder="Foreign Sentence" class="w-full bg-gray-100 rounded-xl p-4 mb-2 outline-none focus:ring-2 focus:ring-indigo-400">
+                <input type="text" id="new-kor" placeholder="Meaning (Korean)" class="w-full bg-gray-100 rounded-xl p-4 mb-6 outline-none focus:ring-2 focus:ring-indigo-400">
+                <button onclick="addNew()" class="w-full py-4 bg-indigo-600 text-white rounded-xl font-bold shadow-lg active:scale-95 transition-transform">저장하기</button>
             </div>
-
-            <div id="modal-manage" class="hidden">
-                <h2 class="text-xl font-black mb-6 italic">My Cards 📚</h2>
-                <div id="manage-list" class="modal-scroll space-y-3 pr-2 mb-6">
-                    </div>
-                <button onclick="closeModal()" class="w-full py-4 bg-gray-100 text-gray-600 rounded-2xl font-bold">닫기</button>
+            <div id="modal-manage" class="hidden text-center">
+                <h2 class="font-bold mb-4 text-gray-700">카드 목록 관리 📚</h2>
+                <div id="manage-list" class="max-h-48 overflow-y-auto mb-6 space-y-2 pr-1 text-left"></div>
+                <button onclick="closeModal()" class="text-gray-400 font-bold hover:text-gray-600 py-2">닫기</button>
             </div>
         </div>
     </div>
 
     <script>
-        const defaultData = [
-            { eng: "Think outside the box.", kor: "고정관념에서 벗어나서 생각해요." },
-            { eng: "It's a piece of cake.", kor: "식은 죽 먹기죠." }
-        ];
+        // 초기 데이터 및 상태
+        let db = JSON.parse(localStorage.getItem('polyglot_v2')) || {
+            EN: [{eng: "Consistency is key.", kor: "꾸준함이 답이다.", hits: 0}],
+            JP: [{eng: "継続は力なり", kor: "계속하는 것이 힘이다.", hits: 0}],
+            DE: [{eng: "Übung macht den Meister.", kor: "연습이 대가를 만든다.", hits: 0}],
+            FR: [{eng: "Petit à petit, l'oiseau fait son nid.", kor: "조금씩 조금씩, 새는 둥지를 튼다.", hits: 0}]
+        };
 
-        let sentences = JSON.parse(localStorage.getItem('myEngCards')) || defaultData;
+        let currentLang = 'EN';
         let currentIdx = -1;
+        let myChart = null;
 
-        function updateUI() {
-            document.getElementById('counter').innerText = `총 문장: ${sentences.length}개`;
-            localStorage.setItem('myEngCards', JSON.stringify(sentences));
+        function save() { localStorage.setItem('polyglot_v2', JSON.stringify(db)); }
+
+        // 1. 발음 재생 함수 (스피커 클릭 시에만)
+        function speakText(e) {
+            if(e) e.stopPropagation(); // 카드 뒤집힘 방지
+            const text = document.getElementById('eng-text').innerText;
+            if(!text || text === "Loading..." || text === "Empty!") return;
+
+            const utterance = new SpeechSynthesisUtterance(text);
+            const langMap = { 'EN': 'en-US', 'JP': 'ja-JP', 'DE': 'de-DE', 'FR': 'fr-FR' };
+            utterance.lang = langMap[currentLang];
+            utterance.rate = 0.9;
+            window.speechSynthesis.speak(utterance);
         }
 
-        function showRandom(e) {
+        // 2. 카드 랜덤 추출 함수 (Next 버튼 클릭)
+        function showRandom(e, isStudy) {
             if(e) e.stopPropagation();
-            if(sentences.length === 0) return;
-            const card = document.getElementById('card');
-            card.classList.remove('is-flipped');
+            const list = db[currentLang];
+            if(list.length === 0) {
+                document.getElementById('eng-text').innerText = "Empty!";
+                document.getElementById('kor-text').innerText = "문장을 추가해주세요.";
+                return;
+            };
 
+            // 통계용 점수 추가 (자동 발음 없음)
+            if(isStudy && currentIdx !== -1) {
+                list[currentIdx].hits = (list[currentIdx].hits || 0) + 1;
+                save();
+            }
+
+            document.getElementById('card').classList.remove('is-flipped');
             setTimeout(() => {
                 let next;
-                do { next = Math.floor(Math.random() * sentences.length); } 
-                while (next === currentIdx && sentences.length > 1);
-                
+                do { next = Math.floor(Math.random() * list.length); } while (next === currentIdx && list.length > 1);
                 currentIdx = next;
-                document.getElementById('eng-text').innerText = sentences[currentIdx].eng;
-                document.getElementById('kor-text').innerText = sentences[currentIdx].kor;
+                document.getElementById('eng-text').innerText = list[currentIdx].eng;
+                document.getElementById('kor-text').innerText = list[currentIdx].kor;
             }, 150);
         }
 
-        // 모달 열기/닫기
+        // 언어 전환
+        function changeLang(lang) {
+            currentLang = lang;
+            currentIdx = -1;
+            updateUI();
+            showRandom(null, false);
+        }
+
+        function updateUI() {
+            ['EN','JP','DE','FR'].forEach(l => document.getElementById(`btn-${l}`).classList.toggle('active', l === currentLang));
+            document.getElementById('current-lang-title').innerText = 
+                currentLang === 'EN' ? 'ENGLISH' : currentLang === 'JP' ? 'JAPANESE' : currentLang === 'DE' ? 'GERMAN' : 'FRENCH';
+        }
+
+        // 페이지 전환 (학습 <-> 분석)
+        function switchPage(to) {
+            const container = document.getElementById('main-container');
+            if(to === 'stats') {
+                container.classList.add('stats-active');
+                renderChart();
+            } else {
+                container.classList.remove('stats-active');
+            }
+        }
+
+        // 분석 차트 렌더링
+        function renderChart() {
+            const ctx = document.getElementById('langChart').getContext('2d');
+            const langs = ['EN', 'JP', 'DE', 'FR'];
+            const data = langs.map(l => db[l].reduce((acc, cur) => acc + (cur.hits || 0), 0));
+            const colors = ['#6366f1', '#10b981', '#f59e0b', '#ef4444'];
+
+            if(myChart) myChart.destroy();
+            myChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: langs,
+                    datasets: [{ data: data, backgroundColor: colors, borderWidth: 0 }]
+                },
+                options: { 
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 10 } } } }, 
+                    cutout: '70%' 
+                }
+            });
+
+            const summary = document.getElementById('stats-summary');
+            summary.innerHTML = langs.map((l, i) => `
+                <div class="flex justify-between items-center bg-white/50 p-3 rounded-xl border border-white/20">
+                    <span class="text-xs font-bold text-gray-500">${l} Card Flips</span>
+                    <span class="font-black text-indigo-600">${data[i]} <small class="text-[10px] text-gray-400 ml-1 font-normal italic">times</small></span>
+                </div>
+            `).join('');
+        }
+
+        // 모달 관리 로직
         function openModal(type) {
             document.getElementById('modal').classList.remove('hidden');
             if(type === 'add') {
                 document.getElementById('modal-add').classList.remove('hidden');
                 document.getElementById('modal-manage').classList.add('hidden');
+                document.getElementById('add-lang-label').innerText = currentLang;
             } else {
                 document.getElementById('modal-add').classList.add('hidden');
                 document.getElementById('modal-manage').classList.remove('hidden');
@@ -115,68 +234,42 @@
 
         function closeModal() { document.getElementById('modal').classList.add('hidden'); }
 
-        // 추가
         function addNew() {
-            const eng = document.getElementById('new-eng').value.trim();
+            const eng = document.getElementById('new-text').value.trim();
             const kor = document.getElementById('new-kor').value.trim();
             if(eng && kor) {
-                sentences.push({eng, kor});
-                updateUI();
+                db[currentLang].push({eng, kor, hits: 0});
+                save(); 
                 closeModal();
-                document.getElementById('new-eng').value = '';
+                document.getElementById('new-text').value = '';
                 document.getElementById('new-kor').value = '';
-                showRandom();
+                showRandom(null, false);
             }
         }
 
-        // 관리 리스트 렌더링 (수정/삭제)
         function renderManageList() {
             const list = document.getElementById('manage-list');
-            list.innerHTML = '';
-            sentences.forEach((s, idx) => {
-                const item = document.createElement('div');
-                item.className = "bg-gray-50 p-4 rounded-2xl flex justify-between items-center gap-3 border border-gray-100";
-                item.innerHTML = `
-                    <div class="flex-1 overflow-hidden">
-                        <p class="font-bold text-sm text-indigo-600 truncate">${s.eng}</p>
-                        <p class="text-xs text-gray-400 truncate">${s.kor}</p>
+            list.innerHTML = db[currentLang].map((s, i) => `
+                <div class="flex justify-between items-center bg-gray-50 p-3 rounded-xl border border-gray-100">
+                    <div class="flex flex-col overflow-hidden mr-2">
+                        <span class="font-bold text-indigo-600 truncate w-32">${s.eng}</span>
+                        <span class="text-[10px] text-gray-400 truncate w-32">${s.kor}</span>
                     </div>
-                    <div class="flex gap-2 shrink-0">
-                        <button onclick="editItem(${idx})" class="text-xs bg-indigo-50 text-indigo-600 px-3 py-1 rounded-lg font-bold">수정</button>
-                        <button onclick="deleteItem(${idx})" class="text-xs bg-rose-50 text-rose-500 px-3 py-1 rounded-lg font-bold">삭제</button>
-                    </div>
-                `;
-                list.appendChild(item);
-            });
+                    <button onclick="deleteItem(${i})" class="text-[10px] text-rose-500 font-bold bg-rose-50 px-2 py-1 rounded-lg flex-shrink-0">삭제</button>
+                </div>
+            `).join('');
         }
 
-        // 삭제
-        function deleteItem(idx) {
-            if(confirm('이 문장을 삭제할까요?')) {
-                sentences.splice(idx, 1);
-                updateUI();
+        function deleteItem(i) {
+            if(confirm('이 카드를 삭제할까요?')) {
+                db[currentLang].splice(i, 1);
+                save(); 
                 renderManageList();
-                if(sentences.length > 0) showRandom();
-                else {
-                    document.getElementById('eng-text').innerText = "문장을 추가해주세요!";
-                    document.getElementById('kor-text').innerText = "해석이 여기에 나타납니다.";
-                }
+                showRandom(null, false);
             }
         }
 
-        // 수정
-        function editItem(idx) {
-            const newEng = prompt("영어 문장 수정:", sentences[idx].eng);
-            const newKor = prompt("한글 해석 수정:", sentences[idx].kor);
-            if(newEng && newKor) {
-                sentences[idx] = { eng: newEng, kor: newKor };
-                updateUI();
-                renderManageList();
-                showRandom();
-            }
-        }
-
-        window.onload = () => { updateUI(); showRandom(); };
+        window.onload = () => { updateUI(); showRandom(null, false); };
     </script>
 </body>
 </html>
