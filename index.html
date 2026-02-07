@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>2026 Flip English Pro</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            display: flex; align-items: center; justify-content: center;
+            min-height: 100vh; margin: 0; font-family: 'Pretendard', sans-serif;
+        }
+        .card-container { perspective: 1000px; width: 90%; max-width: 400px; height: 280px; cursor: pointer; }
+        .card-inner { position: relative; width: 100%; height: 100%; text-align: center; transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1); transform-style: preserve-3d; }
+        .is-flipped .card-inner { transform: rotateY(180deg); }
+        .card-face { position: absolute; width: 100%; height: 100%; -webkit-backface-visibility: hidden; backface-visibility: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center; border-radius: 2.5rem; padding: 2rem; box-shadow: 0 20px 40px rgba(0,0,0,0.1); }
+        .card-front { background: white; border: 1px solid rgba(0,0,0,0.05); color: #1e293b; }
+        .card-back { background: #4f46e5; color: white; transform: rotateY(180deg); }
+        .btn-main { transition: all 0.2s; -webkit-tap-highlight-color: transparent; }
+        .btn-main:active { transform: scale(0.95); }
+    </style>
+</head>
+<body class="p-4">
+
+    <div class="flex flex-col items-center w-full max-w-sm">
+        <div class="mb-8 text-center">
+            <h1 class="text-2xl font-black text-indigo-600 tracking-tight">Flip English 2026</h1>
+            <p id="counter" class="text-gray-500 text-xs mt-1">남은 문장: 0개</p>
+        </div>
+
+        <div class="card-container mb-10" id="card" onclick="this.classList.toggle('is-flipped')">
+            <div class="card-inner" id="card-inner">
+                <div class="card-face card-front">
+                    <p id="eng-text" class="text-2xl font-bold break-keep">문장을 추가해주세요!</p>
+                </div>
+                <div class="card-face card-back">
+                    <p id="kor-text" class="text-xl font-medium break-keep">해석이 여기에 나타납니다.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="flex gap-4 w-full px-4">
+            <button onclick="openModal()" class="btn-main flex-1 bg-white text-indigo-600 py-4 rounded-2xl font-bold shadow-md border border-indigo-100">Add +</button>
+            <button onclick="showRandom(event)" class="btn-main flex-[2] bg-indigo-600 text-white py-4 rounded-2xl font-bold shadow-lg shadow-indigo-200">Next ➔</button>
+        </div>
+    </div>
+
+    <div id="modal" class="hidden fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-6 z-50">
+        <div class="bg-white w-full max-w-xs rounded-3xl p-6 shadow-2xl">
+            <h2 class="text-lg font-bold mb-4">새 문장 추가</h2>
+            <input type="text" id="new-eng" placeholder="English Sentence" class="w-full border-none bg-gray-100 rounded-xl p-3 mb-3 outline-none focus:ring-2 focus:ring-indigo-400">
+            <input type="text" id="new-kor" placeholder="한글 해석" class="w-full border-none bg-gray-100 rounded-xl p-3 mb-6 outline-none focus:ring-2 focus:ring-indigo-400">
+            <div class="flex gap-2">
+                <button onclick="closeModal()" class="flex-1 py-3 text-gray-400 font-bold">취소</button>
+                <button onclick="addNew()" class="flex-1 py-3 bg-indigo-600 text-white rounded-xl font-bold">저장</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 초기 데이터 (데이터가 없을 때만 사용)
+        const defaultData = [
+            { eng: "Think outside the box.", kor: "고정관념에서 벗어나서 생각해요." },
+            { eng: "It's a piece of cake.", kor: "식은 죽 먹기죠." }
+        ];
+
+        let sentences = JSON.parse(localStorage.getItem('myEngCards')) || defaultData;
+        let currentIdx = -1;
+
+        function updateUI() {
+            document.getElementById('counter').innerText = `총 문장: ${sentences.length}개`;
+            localStorage.setItem('myEngCards', JSON.stringify(sentences));
+        }
+
+        function showRandom(e) {
+            if(e) e.stopPropagation();
+            const card = document.getElementById('card');
+            card.classList.remove('is-flipped');
+
+            setTimeout(() => {
+                let next;
+                do { next = Math.floor(Math.random() * sentences.length); } 
+                while (next === currentIdx && sentences.length > 1);
+                
+                currentIdx = next;
+                document.getElementById('eng-text').innerText = sentences[currentIdx].eng;
+                document.getElementById('kor-text').innerText = sentences[currentIdx].kor;
+            }, 150);
+        }
+
+        // 모달 관리
+        function openModal() { document.getElementById('modal').classList.remove('hidden'); }
+        function closeModal() { document.getElementById('modal').classList.add('hidden'); }
+        
+        function addNew() {
+            const eng = document.getElementById('new-eng').value.trim();
+            const kor = document.getElementById('new-kor').value.trim();
+            if(eng && kor) {
+                sentences.push({eng, kor});
+                updateUI();
+                closeModal();
+                document.getElementById('new-eng').value = '';
+                document.getElementById('new-kor').value = '';
+                alert('추가 완료!');
+            }
+        }
+
+        window.onload = () => { updateUI(); showRandom(); };
+    </script>
+</body>
+</html>
