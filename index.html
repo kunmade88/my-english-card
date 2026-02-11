@@ -3,33 +3,39 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Polyglot Master Pro</title>
+    <title>Polyglot Master Pro v6</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
         body { background-color: #f8fafc; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; font-family: 'Inter', sans-serif; }
         .main-shell { width: 100%; max-width: 380px; height: 720px; background: #ffffff; border-radius: 48px; box-shadow: 0 40px 100px -20px rgba(0, 0, 0, 0.1); position: relative; overflow: hidden; display: flex; flex-direction: column; }
+        
         .card-box { perspective: 1000px; width: 100%; height: 340px; padding: 24px; }
         .card-inner { position: relative; width: 100%; height: 100%; transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); transform-style: preserve-3d; cursor: pointer; }
         .is-flipped .card-inner { transform: rotateY(180deg); }
         .card-face { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; border-radius: 40px; display: flex; align-items: center; justify-content: center; padding: 32px; text-align: center; }
         .card-front { background: #f1f5f9; color: #0f172a; border: 1px solid rgba(0,0,0,0.03); }
         .card-back { background: #4f46e5; color: white; transform: rotateY(180deg); }
+
         .btn-grid { display: grid; grid-template-cols: repeat(4, 1fr); gap: 10px; padding: 0 24px; margin-bottom: 32px; }
-        .rate-btn { @apply flex flex-col items-center justify-center py-4 rounded-3xl transition-all active:scale-90 border; background: #ffffff; }
+        .rate-btn { @apply flex flex-col items-center justify-center py-4 rounded-3xl transition-all active:scale-90 border bg-white; }
         .rate-btn span { font-size: 11px; font-weight: 800; }
         .btn-again { border-color: #fee2e2; color: #ef4444; }
         .btn-hard { border-color: #ffedd5; color: #f97316; }
         .btn-good { border-color: #dbeafe; color: #3b82f6; }
         .btn-easy { border-color: #dcfce7; color: #22c55e; }
+
         .tab-btn { @apply text-[11px] font-black transition-all text-slate-300; }
         .tab-btn.active { color: #4f46e5; transform: scale(1.1); }
+        
         .page { position: absolute; inset: 0; padding: 28px; transition: 0.4s ease; display: flex; flex-direction: column; }
         .hidden-page { opacity: 0; pointer-events: none; transform: translateY(10px); }
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
     </style>
 </head>
 <body>
+
     <div class="main-shell">
         <div id="page-study" class="page">
             <div class="flex justify-between items-center mb-8">
@@ -39,59 +45,76 @@
                     <button onclick="changeLang('DE')" id="t-DE" class="tab-btn">DE</button>
                     <button onclick="changeLang('FR')" id="t-FR" class="tab-btn">FR</button>
                 </div>
-                <button onclick="togglePage('stats')" class="text-[10px] font-extrabold px-4 py-2 bg-gray-50 rounded-full text-gray-400">STATS</button>
+                <button onclick="togglePage('stats')" class="text-[10px] font-extrabold px-4 py-2 bg-gray-50 rounded-full text-gray-400 active:bg-gray-100">STATS</button>
             </div>
+
             <div class="card-box" onclick="this.classList.toggle('is-flipped')">
                 <div class="card-inner">
                     <div class="card-face card-front">
                         <p id="display-eng" class="text-xl font-extrabold leading-snug"></p>
-                        <button onclick="speakText(event)" class="absolute bottom-8 w-12 h-12 bg-white/80 backdrop-blur rounded-full shadow-sm flex items-center justify-center">🔊</button>
+                        <button onclick="speakText(event)" class="absolute bottom-8 w-12 h-12 bg-white/80 backdrop-blur rounded-full shadow-sm flex items-center justify-center active:scale-75 transition-transform">🔊</button>
                     </div>
-                    <div class="card-face card-back"><p id="display-kor" class="text-lg font-semibold"></p></div>
+                    <div class="card-face card-back">
+                        <p id="display-kor" class="text-lg font-semibold opacity-90"></p>
+                    </div>
                 </div>
             </div>
+
             <div class="btn-grid">
                 <button onclick="rate(50)" class="rate-btn btn-again"><span>AGAIN</span></button>
                 <button onclick="rate(20)" class="rate-btn btn-hard"><span>HARD</span></button>
                 <button onclick="rate(5)" class="rate-btn btn-good"><span>GOOD</span></button>
                 <button onclick="rate(1)" class="rate-btn btn-easy"><span>EASY</span></button>
             </div>
-            <div class="grid grid-cols-2 gap-3 px-6 mt-auto">
-                <button onclick="openModal('list')" class="py-4 bg-gray-50 rounded-[24px] text-[11px] font-bold text-gray-400 uppercase">Library</button>
-                <button onclick="searchYarn()" class="py-4 bg-indigo-600 rounded-[24px] text-[11px] font-bold text-white shadow-lg uppercase">Movie Clip</button>
+
+            <div class="grid grid-cols-3 gap-3 px-6 mt-auto">
+                <button onclick="openModal('add')" class="py-4 bg-gray-50 rounded-[24px] text-[10px] font-bold text-gray-400 uppercase">Add</button>
+                <button onclick="openModal('list')" class="py-4 bg-gray-50 rounded-[24px] text-[10px] font-bold text-gray-400 uppercase">List</button>
+                <button onclick="searchYarn()" class="py-4 bg-indigo-600 rounded-[24px] text-[10px] font-bold text-white shadow-lg uppercase">Clip</button>
             </div>
         </div>
 
         <div id="page-stats" class="page hidden-page">
             <div class="flex justify-between items-center mb-8"><h2 class="text-xl font-extrabold">Progress</h2><button onclick="togglePage('study')" class="w-10 h-10 flex items-center justify-center bg-gray-50 rounded-full">✕</button></div>
-            <div class="relative h-44 mb-8 flex items-center justify-center"><canvas id="statChart"></canvas><div class="absolute text-center"><p id="mastery-pct" class="text-3xl font-black text-slate-800">0%</p><p class="text-[9px] font-bold text-slate-400 uppercase">Total Mastery</p></div></div>
-            <div id="stat-container" class="space-y-3 overflow-y-auto flex-1 pb-6"></div>
+            <div class="relative h-44 mb-8 flex items-center justify-center"><canvas id="statChart"></canvas><div class="absolute text-center"><p id="mastery-pct" class="text-3xl font-black text-slate-800">0%</p><p class="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Mastery</p></div></div>
+            <div id="stat-container" class="space-y-3 overflow-y-auto flex-1 pb-6 scrollbar-hide"></div>
         </div>
     </div>
 
     <div id="overlay" class="hidden fixed inset-0 bg-slate-900/20 backdrop-blur-sm z-50 flex items-center justify-center p-8">
+        <div id="m-add" class="hidden bg-white w-full rounded-[40px] p-8 shadow-2xl">
+            <h3 class="font-bold mb-6 text-slate-800">New Phrase</h3>
+            <input id="in-e" type="text" placeholder="Foreign Phrase" class="w-full bg-slate-50 p-4 rounded-2xl mb-3 outline-none focus:ring-2 ring-indigo-100">
+            <input id="in-k" type="text" placeholder="Meaning" class="w-full bg-slate-50 p-4 rounded-2xl mb-8 outline-none focus:ring-2 ring-indigo-100">
+            <button onclick="saveItem()" class="w-full py-4 bg-indigo-600 text-white font-bold rounded-2xl shadow-xl">Save Card</button>
+            <button onclick="closeModal()" class="w-full mt-2 text-slate-300 text-xs font-bold py-2">Cancel</button>
+        </div>
         <div id="m-list" class="hidden bg-white w-full rounded-[40px] p-8 shadow-2xl h-[500px] flex flex-col">
-            <h3 class="font-bold mb-4">Word List</h3>
-            <div id="list-box" class="flex-1 overflow-y-auto space-y-2"></div>
+            <h3 class="font-bold mb-4">Manage Library</h3>
+            <div id="list-box" class="flex-1 overflow-y-auto space-y-2 pr-2 scrollbar-hide"></div>
             <button onclick="closeModal()" class="w-full py-4 bg-slate-900 text-white font-bold rounded-2xl mt-4">Close</button>
         </div>
     </div>
 
     <script>
-        // --- 400 Phrases Data ---
+        // --- 400 Phrases Initialization ---
         const initialDB = {
             EN: [
-                {e: "Let's call it a day.", k: "오늘은 이만 하죠.", w: 10},
-                {e: "I'm on the fence about it.", k: "아직 결정 못 했어요.", w: 10},
+                {e: "Let's call it a day.", k: "오늘은 이만 합시다.", w: 10},
+                {e: "I'm on the fence about it.", k: "아직 결정하지 못했어요.", w: 10},
                 {e: "It's not my cup of tea.", k: "제 취향이 아니에요.", w: 10},
-                {e: "Keep me in the loop.", k: "어떻게 되는지 계속 알려주세요.", w: 10},
+                {e: "Keep me in the loop.", k: "상황을 계속 알려주세요.", w: 10},
                 {e: "Let's touch base next week.", k: "다음 주에 다시 연락해요.", w: 10},
                 {e: "I'll play it by ear.", k: "상황 봐서 결정할게요.", w: 10},
-                {e: "Can you give me a hand?", k: "좀 도와줄 수 있어요?", w: 10},
-                {e: "That's a rip-off.", k: "그거 완전 바가지예요.", w: 10},
-                {e: "Get your act together.", k: "정신 차려요.", w: 10},
-                {e: "Break a leg!", k: "행운을 빌어요!", w: 10}
-                // ... (중략: 100개를 채우기 위한 루프가 아래에 시뮬레이션 됨)
+                {e: "Cut to the chase.", k: "본론만 말하세요.", w: 10},
+                {e: "Think outside the box.", k: "고정관념에서 벗어나 생각하세요.", w: 10},
+                {e: "Get your act together.", k: "정신 좀 차려요.", w: 10},
+                {e: "Break a leg!", k: "행운을 빌어요!", w: 10},
+                {e: "It's a piece of cake.", k: "식은 죽 먹기죠.", w: 10},
+                {e: "Hang in there.", k: "조금만 더 버텨보세요.", w: 10},
+                {e: "Back to the drawing board.", k: "처음부터 다시 시작해요.", w: 10},
+                {e: "That's a rip-off.", k: "완전 바가지네요.", w: 10},
+                {e: "Better late than never.", k: "안 하는 것보단 늦게라도 하는 게 낫죠.", w: 10}
             ],
             JP: [
                 {e: "こんにちは", k: "안녕하세요 (낮)", w: 10},
@@ -100,38 +123,47 @@
                 {e: "いくらですか？", k: "얼마입니까?", w: 10},
                 {e: "わかります", k: "알겠습니다", w: 10},
                 {e: "すみません", k: "실례합니다/죄송합니다", w: 10},
-                {e: "はい、そうです", k: "네, 그렇습니다", w: 10},
-                {e: "いいえ", k: "아니요", w: 10}
+                {e: "はじめまして", k: "처음 뵙겠습니다", w: 10},
+                {e: "さようなら", k: "안녕히 가세요", w: 10}
             ],
             DE: [
                 {e: "Guten Tag", k: "안녕하세요", w: 10},
                 {e: "Wie geht es dir?", k: "어떻게 지내?", w: 10},
                 {e: "Ich verstehe nicht.", k: "이해하지 못해요.", w: 10},
                 {e: "Vielen Dank", k: "매우 감사합니다", w: 10},
+                {e: "Was kostet das?", k: "이것은 얼마인가요?", w: 10},
                 {e: "Entschuldigung", k: "죄송합니다", w: 10}
             ],
             FR: [
                 {e: "Bonjour", k: "안녕하세요", w: 10},
                 {e: "Comment ça va ?", k: "어떻게 지내세요?", w: 10},
                 {e: "Merci beaucoup", k: "매우 감사합니다", w: 10},
-                {e: "Je ne sais pas", k: "모르겠어요", w: 10}
+                {e: "Je ne sais pas", k: "모르겠어요", w: 10},
+                {e: "S'il vous plaît", k: "부탁합니다 (Please)", w: 10},
+                {e: "Excusez-moi", k: "실례합니다", w: 10}
             ]
         };
 
-        // 데이터가 부족한 경우 기초 예문으로 100개씩 채워주는 로직
+        // Fill up to 100 phrases for each lang
         ['EN','JP','DE','FR'].forEach(lang => {
-            while(initialDB[lang].length < 100) {
-                initialDB[lang].push({e: `${lang} Basic Phrase ${initialDB[lang].length+1}`, k: `기초 회화 표현 ${initialDB[lang].length+1}`, w: 10});
+            const baseCount = initialDB[lang].length;
+            for(let i = baseCount; i < 100; i++) {
+                initialDB[lang].push({e: `${lang} Level Phrase ${i+1}`, k: `회화 예문 ${i+1}`, w: 10});
             }
         });
 
-        let db = JSON.parse(localStorage.getItem('poly_v6')) || initialDB;
+        let db = JSON.parse(localStorage.getItem('poly_v6_final')) || initialDB;
         let curL = 'EN', curI = -1, myChart = null;
 
-        function save() { localStorage.setItem('poly_v6', JSON.stringify(db)); }
+        function save() { localStorage.setItem('poly_v6_final', JSON.stringify(db)); }
 
         function showNext() {
             const list = db[curL];
+            if(!list.length) {
+                document.getElementById('display-eng').innerText = "Empty";
+                document.getElementById('display-kor').innerText = "Please add cards";
+                return;
+            }
             let pool = [];
             list.forEach((it, idx) => { for(let i=0; i<it.w; i++) pool.push(idx); });
             document.querySelector('.card-box').classList.remove('is-flipped');
@@ -141,14 +173,14 @@
                 curI = next;
                 document.getElementById('display-eng').innerText = list[curI].e;
                 document.getElementById('display-kor').innerText = list[curI].k;
-            }, 150);
+            }, 100);
         }
 
         function rate(w) {
             if(curI === -1) return;
             db[curL][curI].w = w;
             save();
-            showNext();
+            showNext(); // 즉시 다음 카드로
         }
 
         function changeLang(l) {
@@ -175,7 +207,7 @@
             if(myChart) myChart.destroy();
             myChart = new Chart(document.getElementById('statChart'), {
                 type: 'doughnut',
-                data: { datasets: [{ data: stats.map(s=>s.mastered+0.1), backgroundColor: ['#4f46e5','#22c55e','#f97316','#3b82f6'], borderWidth: 0 }] },
+                data: { datasets: [{ data: stats.map(s=>s.mastered+0.01), backgroundColor: ['#4f46e5','#22c55e','#f97316','#3b82f6'], borderWidth: 0 }] },
                 options: { cutout: '85%', plugins: { legend: { display: false } } }
             });
             document.getElementById('stat-container').innerHTML = stats.map(s => `
@@ -185,12 +217,28 @@
                 </div>`).join('');
         }
 
-        function openModal() { 
-            document.getElementById('overlay').classList.remove('hidden'); 
-            document.getElementById('m-list').classList.remove('hidden');
-            document.getElementById('list-box').innerHTML = db[curL].map(it => `<div class="p-3 bg-slate-50 rounded-xl text-xs font-bold text-slate-600">${it.e}</div>`).join('');
+        function openModal(t) {
+            document.getElementById('overlay').classList.remove('hidden');
+            document.getElementById('m-add').classList.toggle('hidden', t !== 'add');
+            document.getElementById('m-list').classList.toggle('hidden', t !== 'list');
+            if(t === 'list') renderList();
         }
         function closeModal() { document.getElementById('overlay').classList.add('hidden'); }
+        
+        function saveItem() {
+            const e = document.getElementById('in-e').value, k = document.getElementById('in-k').value;
+            if(e && k) { db[curL].push({e, k, w: 10}); save(); closeModal(); showNext(); }
+        }
+
+        function renderList() {
+            document.getElementById('list-box').innerHTML = db[curL].map((it, i) => `
+                <div class="bg-slate-50 p-4 rounded-2xl flex justify-between items-center border border-slate-100">
+                    <p class="text-[11px] font-bold text-slate-600 truncate mr-2">${it.e}</p>
+                    <button onclick="delItem(${i})" class="text-red-400 font-black text-[10px] p-2">DEL</button>
+                </div>`).join('');
+        }
+        function delItem(i) { db[curL].splice(i, 1); save(); renderList(); }
+
         function speakText(e) {
             e.stopPropagation();
             const msg = new SpeechSynthesisUtterance(document.getElementById('display-eng').innerText);
