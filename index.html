@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>2026 Smart Polyglot Master</title>
+    <title>2026 Spaced Repetition Polyglot</title>
     
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
@@ -30,7 +30,7 @@
             -webkit-backface-visibility: hidden; backface-visibility: hidden; 
             display: flex; flex-direction: column; align-items: center; justify-content: center; 
             border-radius: 2.5rem; padding: 2rem; box-shadow: 0 20px 40px rgba(0,0,0,0.06); 
-            border: 2px solid transparent; transition: border-color 0.3s;
+            border: 2px solid transparent;
         }
         .card-front { background: white; color: #1e293b; }
         .card-back { background: #4f46e5; color: white; transform: rotateY(180deg); }
@@ -38,12 +38,12 @@
         .lang-btn { transition: all 0.2s; opacity: 0.3; font-size: 0.75rem; font-weight: 800; cursor: pointer; }
         .lang-btn.active { opacity: 1; color: #4f46e5; transform: scale(1.1); }
         
-        .status-badge { @apply text-[10px] px-3 py-1 rounded-full font-bold absolute top-6 left-6 transition-all; }
-        .btn-action { @apply transition-all active:scale-90 shadow-sm hover:shadow-md; }
+        .btn-step { @apply flex-1 flex flex-col items-center justify-center py-3 rounded-2xl font-bold transition-all active:scale-95 shadow-sm border border-black/5; }
+        .btn-step span:first-child { @apply text-[10px] mb-1; }
+        .btn-step span:last-child { @apply text-[9px] opacity-60; }
 
         .prog-bg { background: rgba(0,0,0,0.05); height: 8px; border-radius: 4px; overflow: hidden; }
         .prog-fill { height: 100%; transition: width 1s ease-out; }
-        .scrollbar-hide::-webkit-scrollbar { display: none; }
     </style>
 </head>
 <body>
@@ -58,17 +58,16 @@
             </div>
 
             <div class="mb-4 text-center">
-                <h1 id="current-lang-title" class="text-xs font-black text-indigo-400 tracking-widest">ENGLISH</h1>
+                <h1 id="current-lang-title" class="text-xs font-black text-indigo-400 tracking-widest uppercase">ENGLISH</h1>
             </div>
 
             <div class="card-container mb-6" id="card" onclick="this.classList.toggle('is-flipped')">
                 <div class="card-inner">
                     <div class="card-face card-front" id="card-front-face">
-                        <div id="status-display" class="status-badge">학습중 ❌</div>
                         <button onclick="speakText(event)" class="absolute top-6 right-6 w-10 h-10 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center">
                             <span>🔊</span>
                         </button>
-                        <p id="eng-text" class="text-xl font-bold break-keep italic text-center px-2">Loading...</p>
+                        <p id="eng-text" class="text-xl font-bold break-keep italic text-center px-2 leading-relaxed">Loading...</p>
                     </div>
                     <div class="card-face card-back">
                         <p id="kor-text" class="text-lg font-medium break-keep text-center px-2 underline underline-offset-8 decoration-white/30 text-white/90">해석</p>
@@ -76,14 +75,24 @@
                 </div>
             </div>
 
-            <div class="flex gap-3 mb-8">
-                <button onclick="setStatus('pending')" class="flex-1 py-4 bg-white border border-gray-100 text-gray-400 rounded-2xl font-bold text-xs btn-action">미완료 ❌</button>
-                <button onclick="setStatus('done')" class="flex-1 py-4 bg-emerald-500 text-white rounded-2xl font-bold text-xs shadow-lg shadow-emerald-200 btn-action">암기완료 ✅</button>
+            <div class="flex gap-2 mb-8">
+                <button onclick="setDifficulty(50)" class="btn-step bg-rose-50 text-rose-600">
+                    <span>다시</span><span>1분 이내</span>
+                </button>
+                <button onclick="setDifficulty(20)" class="btn-step bg-orange-50 text-orange-600">
+                    <span>어려움</span><span>6분 이내</span>
+                </button>
+                <button onclick="setDifficulty(5)" class="btn-step bg-blue-50 text-blue-600">
+                    <span>괜찮음</span><span>10분 이내</span>
+                </button>
+                <button onclick="setDifficulty(1)" class="btn-step bg-emerald-50 text-emerald-600">
+                    <span>쉬움</span><span>5일 이내</span>
+                </button>
             </div>
 
             <div class="grid grid-cols-4 gap-2 mb-6 text-[10px] font-bold">
-                <button onclick="openModal('add')" class="py-3 bg-white text-gray-500 rounded-xl border border-gray-100">Add +</button>
-                <button onclick="openModal('manage')" class="py-3 bg-white text-gray-500 rounded-xl border border-gray-100">Edit</button>
+                <button onclick="openModal('add')" class="py-3 bg-white text-gray-500 rounded-xl">Add +</button>
+                <button onclick="openModal('manage')" class="py-3 bg-white text-gray-500 rounded-xl">Edit</button>
                 <button onclick="searchVideo()" class="py-3 bg-rose-500 text-white rounded-xl shadow-lg">🎬 Video</button>
                 <button onclick="showRandom()" class="py-3 bg-indigo-600 text-white rounded-xl shadow-lg">Next ➔</button>
             </div>
@@ -93,25 +102,25 @@
 
         <div id="page-stats" class="page">
             <div class="flex justify-between items-center mb-6">
-                <h2 class="text-xl font-black text-gray-800">My Mastery</h2>
+                <h2 class="text-xl font-black text-gray-800">Mastery Analysis</h2>
                 <button onclick="switchPage('timer')" class="w-8 h-8 flex items-center justify-center bg-gray-100 rounded-full text-gray-400 text-xs font-bold">✕</button>
             </div>
-            <div class="bg-white rounded-[2.5rem] p-6 mb-6 shadow-sm relative h-48 flex items-center justify-center">
+            <div class="bg-white rounded-[2.5rem] p-6 mb-6 shadow-sm relative h-48 flex items-center justify-center text-center">
                 <canvas id="langChart"></canvas>
                 <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
                     <span id="total-percent" class="text-3xl font-black text-gray-800">0%</span>
-                    <span class="text-[10px] font-bold text-gray-400 uppercase">Total Progress</span>
+                    <span class="text-[10px] font-bold text-gray-400 uppercase">Total Mastery</span>
                 </div>
             </div>
-            <div id="stats-summary" class="space-y-4 overflow-y-auto pr-1 flex-1 scrollbar-hide"></div>
+            <div id="stats-summary" class="space-y-4 overflow-y-auto pr-1 flex-1"></div>
         </div>
     </div>
 
     <div id="modal-overlay" class="hidden fixed inset-0 bg-black/40 backdrop-blur-md flex items-center justify-center p-6 z-50">
-        <div id="modal-add" class="hidden bg-white w-full max-w-sm rounded-[3rem] p-8 shadow-2xl">
+        <div id="modal-add" class="hidden bg-white w-full max-w-sm rounded-[3rem] p-8 shadow-2xl text-center">
             <h2 class="text-lg font-bold mb-6 text-indigo-600">New Card</h2>
-            <input type="text" id="new-text" placeholder="Sentence" class="w-full bg-gray-50 rounded-2xl p-4 mb-3 outline-none">
-            <input type="text" id="new-kor" placeholder="Meaning" class="w-full bg-gray-50 rounded-2xl p-4 mb-6 outline-none">
+            <input type="text" id="new-text" placeholder="Sentence" class="w-full bg-gray-50 rounded-2xl p-4 mb-3 outline-none border border-black/5">
+            <input type="text" id="new-kor" placeholder="Meaning" class="w-full bg-gray-50 rounded-2xl p-4 mb-6 outline-none border border-black/5">
             <button onclick="addNew()" class="w-full py-4 bg-indigo-600 text-white rounded-2xl font-bold shadow-lg">Save</button>
             <button onclick="closeModal()" class="w-full text-gray-300 font-bold py-2 text-sm mt-2">Cancel</button>
         </div>
@@ -122,34 +131,30 @@
     </div>
 
     <script>
+        // weight 값이 높을수록 더 자주 등장 (초기값 10)
         const initialDB = {
-            EN: [{eng: "Consistency is key.", kor: "꾸준함이 답이다.", status: "pending"}, {eng: "Practice makes perfect.", kor: "연습이 완벽을 만든다.", status: "pending"}],
-            JP: [{eng: "継続は力なり", kor: "계속하는 것이 힘이다.", status: "pending"}],
-            DE: [{eng: "Übung macht den Meister.", kor: "연습이 대가를 만든다.", status: "pending"}],
-            FR: [{eng: "C'est la vie.", kor: "그게 인생이죠.", status: "pending"}]
+            EN: [{eng: "Consistency is key.", kor: "꾸준함이 답이다.", weight: 10}],
+            JP: [{eng: "継続は力なり", kor: "계속하는 것이 힘이다.", weight: 10}],
+            DE: [{eng: "Übung macht den Meister.", kor: "연습이 대가를 만든다.", weight: 10}],
+            FR: [{eng: "C'est la vie.", kor: "그게 인생이죠.", weight: 10}]
         };
 
-        let db = JSON.parse(localStorage.getItem('polyglot_mastery_v3')) || initialDB;
+        let db = JSON.parse(localStorage.getItem('polyglot_spaced_v1')) || initialDB;
         let currentLang = 'EN';
         let currentIdx = -1;
         let myChart = null;
 
-        function save() { localStorage.setItem('polyglot_mastery_v3', JSON.stringify(db)); }
+        function save() { localStorage.setItem('polyglot_spaced_v1', JSON.stringify(db)); }
 
-        // [확률 제어 로직] 
+        // [핵심] 가중치 기반 랜덤 선택
         function showRandom() {
             const list = db[currentLang];
-            if (list.length === 0) {
-                document.getElementById('eng-text').innerText = "Empty!";
-                document.getElementById('kor-text').innerText = "카드를 추가하세요.";
-                return;
-            }
+            if (list.length === 0) return;
 
-            // 가중치 배열 생성: pending은 10개, done은 1개 추가하여 확률 차등
             let weightedPool = [];
             list.forEach((item, index) => {
-                const weight = item.status === 'done' ? 1 : 10;
-                for (let i = 0; i < weight; i++) weightedPool.push(index);
+                // weight 수치만큼 인덱스를 배열에 추가
+                for (let i = 0; i < item.weight; i++) weightedPool.push(index);
             });
 
             document.getElementById('card').classList.remove('is-flipped');
@@ -163,48 +168,31 @@
                 currentIdx = next;
                 document.getElementById('eng-text').innerText = list[currentIdx].eng;
                 document.getElementById('kor-text').innerText = list[currentIdx].kor;
-                updateStatusUI();
             }, 150);
         }
 
-        function setStatus(status) {
+        // 난이도 설정에 따른 가중치 변경
+        function setDifficulty(newWeight) {
             if (currentIdx === -1) return;
-            db[currentLang][currentIdx].status = status;
+            db[currentLang][currentIdx].weight = newWeight;
             save();
-            updateStatusUI();
-            
-            // 피드백 효과: 테두리 강조
-            const cardFront = document.getElementById('card-front-face');
-            cardFront.style.borderColor = status === 'done' ? '#10b981' : '#f1f5f9';
+
+            // 피드백: 카드 테두리 색상 변경
+            const face = document.getElementById('card-front-face');
+            const colors = {50: '#f43f5e', 20: '#fb923c', 5: '#3b82f6', 1: '#10b981'};
+            face.style.borderColor = colors[newWeight];
             
             setTimeout(() => {
-                cardFront.style.borderColor = 'transparent';
+                face.style.borderColor = 'transparent';
                 showRandom();
             }, 400);
-        }
-
-        function updateStatusUI() {
-            const badge = document.getElementById('status-display');
-            const item = db[currentLang][currentIdx];
-            if(!item) return;
-            
-            if(item.status === 'done') {
-                badge.innerText = '암기완료 ✅';
-                badge.className = 'status-badge bg-emerald-100 text-emerald-600';
-            } else {
-                badge.innerText = '학습중 ❌';
-                badge.className = 'status-badge bg-gray-100 text-gray-400';
-            }
         }
 
         function changeLang(lang) {
             currentLang = lang;
             currentIdx = -1;
-            ['EN','JP','DE','FR'].forEach(l => {
-                document.getElementById(`btn-${l}`).classList.toggle('active', l === lang);
-            });
-            const names = {EN:'ENGLISH', JP:'JAPANESE', DE:'GERMAN', FR:'FRENCH'};
-            document.getElementById('current-lang-title').innerText = names[lang];
+            ['EN','JP','DE','FR'].forEach(l => document.getElementById(`btn-${l}`).classList.toggle('active', l === lang));
+            document.getElementById('current-lang-title').innerText = lang === 'EN' ? 'ENGLISH' : lang === 'JP' ? 'JAPANESE' : lang === 'DE' ? 'GERMAN' : 'FRENCH';
             showRandom();
         }
 
@@ -221,19 +209,20 @@
             const container = document.getElementById('main-container');
             if(to === 'stats') {
                 container.classList.add('stats-active');
-                setTimeout(renderMasteryChart, 300);
+                setTimeout(renderStats, 300);
             } else {
                 container.classList.remove('stats-active');
             }
         }
 
-        function renderMasteryChart() {
+        function renderStats() {
             const ctx = document.getElementById('langChart').getContext('2d');
             const langs = ['EN', 'JP', 'DE', 'FR'];
             
             const stats = langs.map(l => {
                 const total = db[l].length;
-                const done = db[l].filter(i => i.status === 'done').length;
+                // 가중치가 1인 것(쉬움)을 암기 완료로 간주
+                const done = db[l].filter(i => i.weight === 1).length;
                 return { lang: l, total, done, percent: total === 0 ? 0 : Math.round((done/total)*100) };
             });
 
@@ -246,7 +235,7 @@
                 type: 'doughnut',
                 data: {
                     datasets: [{
-                        data: stats.map(s => s.done || 0.1),
+                        data: stats.map(s => s.done + 0.1),
                         backgroundColor: ['#6366f1', '#10b981', '#f59e0b', '#ef4444'],
                         borderWidth: 0
                     }]
@@ -259,7 +248,7 @@
                 <div class="bg-white p-4 rounded-3xl shadow-sm border border-gray-50">
                     <div class="flex justify-between items-center mb-2">
                         <span class="text-xs font-black text-gray-800">${s.lang}</span>
-                        <span class="text-xs font-bold text-indigo-600">${s.done}/${s.total} Done</span>
+                        <span class="text-xs font-bold text-indigo-600">${s.done}/${s.total} Mastered</span>
                     </div>
                     <div class="prog-bg"><div class="prog-fill" style="width:${s.percent}%; background:${s.lang==='EN'?'#6366f1':s.lang==='JP'?'#10b981':s.lang==='DE'?'#f59e0b':'#ef4444'}"></div></div>
                 </div>
@@ -277,7 +266,7 @@
             const eng = document.getElementById('new-text').value.trim();
             const kor = document.getElementById('new-kor').value.trim();
             if(eng && kor) {
-                db[currentLang].push({eng, kor, status: 'pending'});
+                db[currentLang].push({eng, kor, weight: 10});
                 save(); closeModal(); showRandom();
                 document.getElementById('new-text').value = '';
                 document.getElementById('new-kor').value = '';
@@ -288,7 +277,7 @@
             list.innerHTML = db[currentLang].map((s, i) => `
                 <div class="flex items-center justify-between bg-gray-50 p-4 rounded-2xl mb-2 border border-gray-100">
                     <div class="text-left">
-                        <div class="text-[9px] font-bold ${s.status === 'done' ? 'text-emerald-500' : 'text-gray-400'} uppercase">${s.status}</div>
+                        <div class="text-[9px] font-bold text-gray-400 uppercase">Weight: ${s.weight}</div>
                         <div class="text-[11px] font-bold text-gray-800">${s.eng}</div>
                     </div>
                     <button onclick="deleteItem(${i})" class="text-rose-500 text-[10px] font-bold px-2">삭제</button>
@@ -301,7 +290,6 @@
         }
         function searchVideo() {
             const text = document.getElementById('eng-text').innerText;
-            if(text === "Loading..." || text === "Empty!") return;
             window.open(`https://yarn.co/yarn-find?text=${encodeURIComponent(text)}`, '_blank');
         }
 
