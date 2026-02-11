@@ -3,288 +3,309 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>2026 Polyglot Master - 400 Expressions</title>
+    <title>2026 Smart Polyglot Master</title>
     
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <link rel="apple-touch-icon" href="https://img.icons8.com/fluency/180/000000/language.png">
-    <link rel="icon" href="https://img.icons8.com/fluency/180/000000/language.png">
-
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@400;700;900&display=swap');
         body {
-            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            background: linear-gradient(135deg, #f1f5f9 0%, #cbd5e1 100%);
             display: flex; align-items: center; justify-content: center;
             min-height: 100vh; margin: 0; font-family: 'Pretendard', sans-serif;
         }
-        .page-container { position: relative; width: 100%; max-width: 400px; height: 620px; overflow: hidden; }
-        .page { position: absolute; inset: 0; transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1); padding: 1.5rem; display: flex; flex-direction: column; }
-        #page-timer { transform: translateX(0); }
-        #page-stats { transform: translateX(100%); }
-        .stats-active #page-timer { transform: translateX(-100%); }
-        .stats-active #page-stats { transform: translateX(0); }
+        .page-container { position: relative; width: 100%; max-width: 400px; height: 680px; overflow: hidden; }
+        .page { position: absolute; inset: 0; transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1); padding: 1.5rem; display: flex; flex-direction: column; }
+        
+        #page-timer { transform: translateX(0); opacity: 1; }
+        #page-stats { transform: translateX(100%); opacity: 0; }
+        .stats-active #page-timer { transform: translateX(-100%); opacity: 0; }
+        .stats-active #page-stats { transform: translateX(0); opacity: 1; }
 
         .card-container { perspective: 1000px; width: 100%; height: 250px; cursor: pointer; }
         .card-inner { position: relative; width: 100%; height: 100%; transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1); transform-style: preserve-3d; }
         .is-flipped .card-inner { transform: rotateY(180deg); }
-        
         .card-face { 
             position: absolute; width: 100%; height: 100%; 
             -webkit-backface-visibility: hidden; backface-visibility: hidden; 
             display: flex; flex-direction: column; align-items: center; justify-content: center; 
-            border-radius: 2.5rem; padding: 2rem; box-shadow: 0 15px 30px rgba(0,0,0,0.08); 
+            border-radius: 2.5rem; padding: 2rem; box-shadow: 0 20px 40px rgba(0,0,0,0.06); 
+            border: 2px solid transparent; transition: border-color 0.3s;
         }
-        .card-front { background: white; color: #1e293b; border: 1px solid rgba(0,0,0,0.03); }
+        .card-front { background: white; color: #1e293b; }
         .card-back { background: #4f46e5; color: white; transform: rotateY(180deg); }
         
-        .lang-btn { transition: all 0.2s; opacity: 0.4; font-size: 0.7rem; font-weight: 800; border-bottom: 2px solid transparent; cursor: pointer; }
-        .lang-btn.active { opacity: 1; color: #4f46e5; border-bottom: 2px solid #4f46e5; }
-        .btn-action:active { transform: scale(0.95); }
+        .lang-btn { transition: all 0.2s; opacity: 0.3; font-size: 0.75rem; font-weight: 800; cursor: pointer; }
+        .lang-btn.active { opacity: 1; color: #4f46e5; transform: scale(1.1); }
         
+        .status-badge { @apply text-[10px] px-3 py-1 rounded-full font-bold absolute top-6 left-6 transition-all; }
+        .btn-action { @apply transition-all active:scale-90 shadow-sm hover:shadow-md; }
+
+        .prog-bg { background: rgba(0,0,0,0.05); height: 8px; border-radius: 4px; overflow: hidden; }
+        .prog-fill { height: 100%; transition: width 1s ease-out; }
         .scrollbar-hide::-webkit-scrollbar { display: none; }
-        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
 </head>
 <body>
 
-    <div class="page-container bg-white/40 backdrop-blur-md rounded-[3rem] shadow-2xl border border-white/20" id="main-container">
+    <div class="page-container bg-white/70 backdrop-blur-xl rounded-[3.5rem] shadow-2xl border border-white/40" id="main-container">
         <div id="page-timer" class="page">
-            <div class="flex justify-around mb-6 bg-white/30 p-2 rounded-2xl shadow-inner">
-                <button onclick="changeLang('EN')" id="btn-EN" class="lang-btn active py-1">EN</button>
-                <button onclick="changeLang('JP')" id="btn-JP" class="lang-btn py-1">JP</button>
-                <button onclick="changeLang('DE')" id="btn-DE" class="lang-btn py-1">DE</button>
-                <button onclick="changeLang('FR')" id="btn-FR" class="lang-btn py-1">FR</button>
+            <div class="flex justify-around mb-8 bg-black/5 p-2 rounded-2xl">
+                <button onclick="changeLang('EN')" id="btn-EN" class="lang-btn active">EN</button>
+                <button onclick="changeLang('JP')" id="btn-JP" class="lang-btn">JP</button>
+                <button onclick="changeLang('DE')" id="btn-DE" class="lang-btn">DE</button>
+                <button onclick="changeLang('FR')" id="btn-FR" class="lang-btn">FR</button>
             </div>
+
             <div class="mb-4 text-center">
-                <h1 id="current-lang-title" class="text-xl font-black text-indigo-600 italic tracking-tighter uppercase">ENGLISH</h1>
+                <h1 id="current-lang-title" class="text-xs font-black text-indigo-400 tracking-widest">ENGLISH</h1>
             </div>
-            <div class="card-container mb-8" id="card" onclick="this.classList.toggle('is-flipped')">
+
+            <div class="card-container mb-6" id="card" onclick="this.classList.toggle('is-flipped')">
                 <div class="card-inner">
-                    <div class="card-face card-front">
-                        <button onclick="speakText(event)" class="absolute top-6 right-6 w-10 h-10 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center shadow-sm active:scale-90 transition-all">
-                            <span class="text-lg">🔊</span>
+                    <div class="card-face card-front" id="card-front-face">
+                        <div id="status-display" class="status-badge">학습중 ❌</div>
+                        <button onclick="speakText(event)" class="absolute top-6 right-6 w-10 h-10 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center">
+                            <span>🔊</span>
                         </button>
-                        <p id="eng-text" class="text-xl font-bold break-keep italic text-center">Loading...</p>
+                        <p id="eng-text" class="text-xl font-bold break-keep italic text-center px-2">Loading...</p>
                     </div>
                     <div class="card-face card-back">
-                        <p id="kor-text" class="text-lg font-medium break-keep text-center">해석</p>
+                        <p id="kor-text" class="text-lg font-medium break-keep text-center px-2 underline underline-offset-8 decoration-white/30 text-white/90">해석</p>
                     </div>
                 </div>
             </div>
-            <div class="grid grid-cols-4 gap-2 mb-6">
-                <button onclick="openModal('add')" class="btn-action bg-white text-indigo-600 py-4 rounded-2xl font-bold shadow-sm text-[10px]">Add +</button>
-                <button onclick="openModal('manage')" class="btn-action bg-white text-gray-400 py-4 rounded-2xl font-bold shadow-sm text-[10px]">Edit</button>
-                <button onclick="searchVideo()" class="btn-action bg-rose-500 text-white py-4 rounded-2xl font-bold shadow-lg text-[10px]">🎬 Video</button>
-                <button onclick="showRandom(event, true)" class="btn-action bg-indigo-600 text-white py-4 rounded-2xl font-bold shadow-lg text-[10px]">Next ➔</button>
+
+            <div class="flex gap-3 mb-8">
+                <button onclick="setStatus('pending')" class="flex-1 py-4 bg-white border border-gray-100 text-gray-400 rounded-2xl font-bold text-xs btn-action">미완료 ❌</button>
+                <button onclick="setStatus('done')" class="flex-1 py-4 bg-emerald-500 text-white rounded-2xl font-bold text-xs shadow-lg shadow-emerald-200 btn-action">암기완료 ✅</button>
             </div>
-            <button onclick="switchPage('stats')" class="mt-auto text-[10px] font-black text-gray-400 uppercase tracking-widest text-center py-2">2026 Study Analysis 📊</button>
+
+            <div class="grid grid-cols-4 gap-2 mb-6 text-[10px] font-bold">
+                <button onclick="openModal('add')" class="py-3 bg-white text-gray-500 rounded-xl border border-gray-100">Add +</button>
+                <button onclick="openModal('manage')" class="py-3 bg-white text-gray-500 rounded-xl border border-gray-100">Edit</button>
+                <button onclick="searchVideo()" class="py-3 bg-rose-500 text-white rounded-xl shadow-lg">🎬 Video</button>
+                <button onclick="showRandom()" class="py-3 bg-indigo-600 text-white rounded-xl shadow-lg">Next ➔</button>
+            </div>
+
+            <button onclick="switchPage('stats')" class="mt-auto text-[10px] font-black text-indigo-400 uppercase tracking-widest text-center py-2">Mastery Dashboard 📊</button>
         </div>
 
-        <div id="page-stats" class="page text-center">
-            <div class="flex justify-between items-center mb-8 text-left">
-                <h2 class="text-xl font-black text-indigo-900">Analysis</h2>
-                <button onclick="switchPage('timer')" class="text-xs font-bold text-rose-500 bg-rose-50 px-3 py-1 rounded-full">✕ Close</button>
+        <div id="page-stats" class="page">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-xl font-black text-gray-800">My Mastery</h2>
+                <button onclick="switchPage('timer')" class="w-8 h-8 flex items-center justify-center bg-gray-100 rounded-full text-gray-400 text-xs font-bold">✕</button>
             </div>
-            <div class="bg-white/60 rounded-[2rem] p-6 mb-6 shadow-inner border border-white/20 h-48 relative">
+            <div class="bg-white rounded-[2.5rem] p-6 mb-6 shadow-sm relative h-48 flex items-center justify-center">
                 <canvas id="langChart"></canvas>
+                <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                    <span id="total-percent" class="text-3xl font-black text-gray-800">0%</span>
+                    <span class="text-[10px] font-bold text-gray-400 uppercase">Total Progress</span>
+                </div>
             </div>
-            <div id="stats-summary" class="space-y-3 overflow-y-auto pr-1 scrollbar-hide flex-1"></div>
+            <div id="stats-summary" class="space-y-4 overflow-y-auto pr-1 flex-1 scrollbar-hide"></div>
         </div>
     </div>
 
-    <div id="modal-overlay" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-6 z-50">
-        <div id="modal-add" class="hidden bg-white w-full max-w-sm rounded-[2.5rem] p-8 shadow-2xl">
-            <h2 class="text-lg font-bold mb-4 text-indigo-600"><span id="add-lang-label"></span> 추가</h2>
-            <input type="text" id="new-text" placeholder="Sentence" class="w-full bg-gray-100 rounded-xl p-4 mb-2 outline-none">
-            <input type="text" id="new-kor" placeholder="Meaning" class="w-full bg-gray-100 rounded-xl p-4 mb-6 outline-none">
-            <button onclick="addNew()" class="w-full py-4 bg-indigo-600 text-white rounded-xl font-bold shadow-lg">저장</button>
-            <button onclick="closeModal()" class="w-full text-gray-400 font-bold py-4 text-sm">닫기</button>
+    <div id="modal-overlay" class="hidden fixed inset-0 bg-black/40 backdrop-blur-md flex items-center justify-center p-6 z-50">
+        <div id="modal-add" class="hidden bg-white w-full max-w-sm rounded-[3rem] p-8 shadow-2xl">
+            <h2 class="text-lg font-bold mb-6 text-indigo-600">New Card</h2>
+            <input type="text" id="new-text" placeholder="Sentence" class="w-full bg-gray-50 rounded-2xl p-4 mb-3 outline-none">
+            <input type="text" id="new-kor" placeholder="Meaning" class="w-full bg-gray-50 rounded-2xl p-4 mb-6 outline-none">
+            <button onclick="addNew()" class="w-full py-4 bg-indigo-600 text-white rounded-2xl font-bold shadow-lg">Save</button>
+            <button onclick="closeModal()" class="w-full text-gray-300 font-bold py-2 text-sm mt-2">Cancel</button>
         </div>
-        <div id="modal-manage" class="hidden bg-white w-full max-w-sm rounded-[2.5rem] p-8 shadow-2xl text-center">
-            <div id="manage-list" class="max-h-80 overflow-y-auto mb-4 space-y-2 text-left pr-1 scrollbar-hide"></div>
-            <button onclick="closeModal()" class="w-full text-gray-400 font-bold py-2">닫기</button>
+        <div id="modal-manage" class="hidden bg-white w-full max-w-sm rounded-[3rem] p-8 shadow-2xl text-center">
+            <div id="manage-list" class="max-h-96 overflow-y-auto mb-4 space-y-2 text-left pr-1 scrollbar-hide"></div>
+            <button onclick="closeModal()" class="w-full text-gray-300 font-bold py-2 mt-4">Close</button>
         </div>
     </div>
 
     <script>
-        // 400개 문장이 포함된 데이터베이스
         const initialDB = {
-            EN: [
-                {eng: "Consistency is key.", kor: "꾸준함이 답이다.", hits: 0},
-                {eng: "How's it going?", kor: "어떻게 지내?", hits: 0},
-                {eng: "Could you repeat that?", kor: "다시 말해줄래?", hits: 0},
-                {eng: "I'm on my way.", kor: "가는 중이야.", hits: 0},
-                {eng: "What do you mean?", kor: "무슨 뜻이야?", hits: 0},
-                {eng: "It's on me.", kor: "내가 살게.", hits: 0},
-                {eng: "Never mind.", kor: "신경 쓰지 마.", hits: 0},
-                {eng: "Take your time.", kor: "천천히 해.", hits: 0},
-                {eng: "I'll get back to you.", kor: "나중에 다시 연락할게.", hits: 0},
-                {eng: "Make yourself at home.", kor: "편하게 있어.", hits: 0},
-                {eng: "I'm tied up at the moment.", kor: "지금 좀 바빠.", hits: 0},
-                {eng: "Keep me posted.", kor: "계속 소식 알려줘.", hits: 0},
-                {eng: "That makes sense.", kor: "말이 되네.", hits: 0},
-                {eng: "I'm not following you.", kor: "이해가 잘 안 가요.", hits: 0},
-                {eng: "Let's call it a day.", kor: "오늘은 이만하자.", hits: 0}
-                // (공간상 요약, 실제로는 100개씩 가득 채워져 있습니다)
-            ],
-            JP: [
-                {eng: "継続は力なり", kor: "계속하는 것이 힘이다.", hits: 0},
-                {eng: "お元気ですか？", kor: "잘 지내세요?", hits: 0},
-                {eng: "よろしくお願いします。", kor: "잘 부탁드립니다.", hits: 0},
-                {eng: "なるほど。", kor: "그렇군요.", hits: 0},
-                {eng: "お疲れ様でした。", kor: "수고하셨습니다.", hits: 0},
-                {eng: "承知いたしました。", kor: "알겠습니다.", hits: 0},
-                {eng: "ちょっと待ってください。", kor: "잠시만 기다려 주세요.", hits: 0}
-            ],
-            DE: [
-                {eng: "Übung macht den Meister.", kor: "연습이 대가를 만든다.", hits: 0},
-                {eng: "Wie geht es Ihnen?", kor: "어떻게 지내세요?", hits: 0},
-                {eng: "Viel Glück!", kor: "행운을 빌어요!", hits: 0},
-                {eng: "Alles klar.", kor: "확인했습니다.", hits: 0},
-                {eng: "Keine Ahnung.", kor: "전혀 모르겠어요.", hits: 0}
-            ],
-            FR: [
-                {eng: "Petit à petit, l'oiseau fait son nid.", kor: "조금씩 새는 둥지를 튼다.", hits: 0},
-                {eng: "Comment allez-vous ?", kor: "어떻게 지내세요?", hits: 0},
-                {eng: "C'est la vie.", kor: "그게 인생이죠.", hits: 0},
-                {eng: "D'accord.", kor: "알겠습니다.", hits: 0},
-                {eng: "Enchanté.", kor: "만나서 반가워요.", hits: 0}
-            ]
+            EN: [{eng: "Consistency is key.", kor: "꾸준함이 답이다.", status: "pending"}, {eng: "Practice makes perfect.", kor: "연습이 완벽을 만든다.", status: "pending"}],
+            JP: [{eng: "継続は力なり", kor: "계속하는 것이 힘이다.", status: "pending"}],
+            DE: [{eng: "Übung macht den Meister.", kor: "연습이 대가를 만든다.", status: "pending"}],
+            FR: [{eng: "C'est la vie.", kor: "그게 인생이죠.", status: "pending"}]
         };
 
-        // 로컬스토리지에서 불러오거나 초기 데이터 사용
-        let db = JSON.parse(localStorage.getItem('polyglot_v2')) || initialDB;
-
+        let db = JSON.parse(localStorage.getItem('polyglot_mastery_v3')) || initialDB;
         let currentLang = 'EN';
         let currentIdx = -1;
         let myChart = null;
 
-        function save() { localStorage.setItem('polyglot_v2', JSON.stringify(db)); }
+        function save() { localStorage.setItem('polyglot_mastery_v3', JSON.stringify(db)); }
 
-        function speakText(e) {
-            if(e) e.stopPropagation();
-            const text = document.getElementById('eng-text').innerText;
-            if(!text || text === "Loading...") return;
-            window.speechSynthesis.cancel(); 
-            const utterance = new SpeechSynthesisUtterance(text);
-            const langMap = { 'EN': 'en-US', 'JP': 'ja-JP', 'DE': 'de-DE', 'FR': 'fr-FR' };
-            utterance.lang = langMap[currentLang];
-            window.speechSynthesis.speak(utterance);
+        // [확률 제어 로직] 
+        function showRandom() {
+            const list = db[currentLang];
+            if (list.length === 0) {
+                document.getElementById('eng-text').innerText = "Empty!";
+                document.getElementById('kor-text').innerText = "카드를 추가하세요.";
+                return;
+            }
+
+            // 가중치 배열 생성: pending은 10개, done은 1개 추가하여 확률 차등
+            let weightedPool = [];
+            list.forEach((item, index) => {
+                const weight = item.status === 'done' ? 1 : 10;
+                for (let i = 0; i < weight; i++) weightedPool.push(index);
+            });
+
+            document.getElementById('card').classList.remove('is-flipped');
+            
+            setTimeout(() => {
+                let next;
+                do {
+                    next = weightedPool[Math.floor(Math.random() * weightedPool.length)];
+                } while (next === currentIdx && list.length > 1);
+
+                currentIdx = next;
+                document.getElementById('eng-text').innerText = list[currentIdx].eng;
+                document.getElementById('kor-text').innerText = list[currentIdx].kor;
+                updateStatusUI();
+            }, 150);
         }
 
-        function searchVideo() {
-            const text = document.getElementById('eng-text').innerText;
-            if(!text || text === "Loading...") return;
-            window.open(`https://yarn.co/yarn-find?text=${encodeURIComponent(text.replace(/[.,!?]/g, ""))}`, '_blank');
+        function setStatus(status) {
+            if (currentIdx === -1) return;
+            db[currentLang][currentIdx].status = status;
+            save();
+            updateStatusUI();
+            
+            // 피드백 효과: 테두리 강조
+            const cardFront = document.getElementById('card-front-face');
+            cardFront.style.borderColor = status === 'done' ? '#10b981' : '#f1f5f9';
+            
+            setTimeout(() => {
+                cardFront.style.borderColor = 'transparent';
+                showRandom();
+            }, 400);
+        }
+
+        function updateStatusUI() {
+            const badge = document.getElementById('status-display');
+            const item = db[currentLang][currentIdx];
+            if(!item) return;
+            
+            if(item.status === 'done') {
+                badge.innerText = '암기완료 ✅';
+                badge.className = 'status-badge bg-emerald-100 text-emerald-600';
+            } else {
+                badge.innerText = '학습중 ❌';
+                badge.className = 'status-badge bg-gray-100 text-gray-400';
+            }
         }
 
         function changeLang(lang) {
             currentLang = lang;
             currentIdx = -1;
-            updateUI();
-            showRandom(null, false);
+            ['EN','JP','DE','FR'].forEach(l => {
+                document.getElementById(`btn-${l}`).classList.toggle('active', l === lang);
+            });
+            const names = {EN:'ENGLISH', JP:'JAPANESE', DE:'GERMAN', FR:'FRENCH'};
+            document.getElementById('current-lang-title').innerText = names[lang];
+            showRandom();
         }
 
-        function showRandom(e, isStudy) {
-            if(e) e.stopPropagation();
-            const list = db[currentLang];
-            if(list.length === 0) {
-                document.getElementById('eng-text').innerText = "Empty!";
-                document.getElementById('kor-text').innerText = "카드를 추가하세요.";
-                return;
-            }
-            if(isStudy && currentIdx !== -1) { list[currentIdx].hits++; save(); }
-            document.getElementById('card').classList.remove('is-flipped');
-            setTimeout(() => {
-                let next;
-                do { next = Math.floor(Math.random() * list.length); } while (next === currentIdx && list.length > 1);
-                currentIdx = next;
-                document.getElementById('eng-text').innerText = list[currentIdx].eng;
-                document.getElementById('kor-text').innerText = list[currentIdx].kor;
-            }, 150);
-        }
-
-        function openModal(type) {
-            document.getElementById('modal-overlay').classList.remove('hidden');
-            document.getElementById('modal-add').classList.add('hidden');
-            document.getElementById('modal-manage').classList.add('hidden');
-            if(type === 'add') {
-                document.getElementById('modal-add').classList.remove('hidden');
-                document.getElementById('add-lang-label').innerText = currentLang;
-            } else if(type === 'manage') {
-                document.getElementById('modal-manage').classList.remove('hidden');
-                renderManageList();
-            }
-        }
-        function closeModal() { document.getElementById('modal-overlay').classList.add('hidden'); }
-
-        function addNew() {
-            const eng = document.getElementById('new-text').value.trim();
-            const kor = document.getElementById('new-kor').value.trim();
-            if(eng && kor) {
-                db[currentLang].push({eng, kor, hits: 0});
-                save(); closeModal(); showRandom(null, false);
-                document.getElementById('new-text').value = '';
-                document.getElementById('new-kor').value = '';
-            }
-        }
-
-        function renderManageList() {
-            const list = document.getElementById('manage-list');
-            list.innerHTML = db[currentLang].map((s, i) => `
-                <div class="bg-gray-50 p-4 rounded-2xl mb-2 border border-gray-100">
-                    <div class="text-[12px] font-bold text-indigo-600 mb-1 break-all">${s.eng}</div>
-                    <div class="text-[10px] text-gray-500 italic mb-3">${s.kor}</div>
-                    <div class="flex justify-end gap-2">
-                        <button onclick="deleteItem(${i})" class="text-rose-500 font-bold bg-rose-50 px-4 py-1 rounded-lg text-[10px]">삭제</button>
-                    </div>
-                </div>`).join('');
-        }
-
-        function deleteItem(i) {
-            db[currentLang].splice(i, 1);
-            save(); renderManageList(); showRandom(null, false);
+        function speakText(e) {
+            e.stopPropagation();
+            const text = document.getElementById('eng-text').innerText;
+            const utterance = new SpeechSynthesisUtterance(text);
+            const langMap = {EN:'en-US', JP:'ja-JP', DE:'de-DE', FR:'fr-FR'};
+            utterance.lang = langMap[currentLang];
+            window.speechSynthesis.speak(utterance);
         }
 
         function switchPage(to) {
             const container = document.getElementById('main-container');
             if(to === 'stats') {
                 container.classList.add('stats-active');
-                setTimeout(renderChart, 300);
+                setTimeout(renderMasteryChart, 300);
             } else {
                 container.classList.remove('stats-active');
             }
         }
 
-        function renderChart() {
+        function renderMasteryChart() {
             const ctx = document.getElementById('langChart').getContext('2d');
             const langs = ['EN', 'JP', 'DE', 'FR'];
-            const data = langs.map(l => db[l].reduce((acc, cur) => acc + (cur.hits || 0), 0));
+            
+            const stats = langs.map(l => {
+                const total = db[l].length;
+                const done = db[l].filter(i => i.status === 'done').length;
+                return { lang: l, total, done, percent: total === 0 ? 0 : Math.round((done/total)*100) };
+            });
+
+            const totalDone = stats.reduce((acc, cur) => acc + cur.done, 0);
+            const totalCount = stats.reduce((acc, cur) => acc + cur.total, 0);
+            document.getElementById('total-percent').innerText = (totalCount === 0 ? 0 : Math.round((totalDone/totalCount)*100)) + '%';
+
             if(myChart) myChart.destroy();
             myChart = new Chart(ctx, {
                 type: 'doughnut',
                 data: {
-                    labels: langs,
-                    datasets: [{ data: data, backgroundColor: ['#6366f1', '#10b981', '#f59e0b', '#ef4444'], borderWidth: 0 }]
+                    datasets: [{
+                        data: stats.map(s => s.done || 0.1),
+                        backgroundColor: ['#6366f1', '#10b981', '#f59e0b', '#ef4444'],
+                        borderWidth: 0
+                    }]
                 },
-                options: { responsive: true, maintainAspectRatio: false, cutout: '70%', plugins: { legend: { display: false } } }
+                options: { cutout: '85%', plugins: { legend: { display: false } } }
             });
+
             const summary = document.getElementById('stats-summary');
-            summary.innerHTML = langs.map((l, i) => `
-                <div class="flex justify-between items-center bg-white/50 p-3 rounded-xl border border-white/20">
-                    <span class="text-xs font-bold text-gray-500">${l}</span>
-                    <span class="font-black text-indigo-600">${data[i]} clips</span>
-                </div>`).join('');
+            summary.innerHTML = stats.map(s => `
+                <div class="bg-white p-4 rounded-3xl shadow-sm border border-gray-50">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="text-xs font-black text-gray-800">${s.lang}</span>
+                        <span class="text-xs font-bold text-indigo-600">${s.done}/${s.total} Done</span>
+                    </div>
+                    <div class="prog-bg"><div class="prog-fill" style="width:${s.percent}%; background:${s.lang==='EN'?'#6366f1':s.lang==='JP'?'#10b981':s.lang==='DE'?'#f59e0b':'#ef4444'}"></div></div>
+                </div>
+            `).join('');
         }
 
-        function updateUI() {
-            ['EN','JP','DE','FR'].forEach(l => document.getElementById(`btn-${l}`).classList.toggle('active', l === currentLang));
-            const names = { 'EN': 'ENGLISH', 'JP': 'JAPANESE', 'DE': 'GERMAN', 'FR': 'FRENCH' };
-            document.getElementById('current-lang-title').innerText = names[currentLang];
+        function openModal(type) {
+            document.getElementById('modal-overlay').classList.remove('hidden');
+            document.getElementById('modal-add').classList.toggle('hidden', type !== 'add');
+            document.getElementById('modal-manage').classList.toggle('hidden', type !== 'manage');
+            if(type === 'manage') renderManageList();
+        }
+        function closeModal() { document.getElementById('modal-overlay').classList.add('hidden'); }
+        function addNew() {
+            const eng = document.getElementById('new-text').value.trim();
+            const kor = document.getElementById('new-kor').value.trim();
+            if(eng && kor) {
+                db[currentLang].push({eng, kor, status: 'pending'});
+                save(); closeModal(); showRandom();
+                document.getElementById('new-text').value = '';
+                document.getElementById('new-kor').value = '';
+            }
+        }
+        function renderManageList() {
+            const list = document.getElementById('manage-list');
+            list.innerHTML = db[currentLang].map((s, i) => `
+                <div class="flex items-center justify-between bg-gray-50 p-4 rounded-2xl mb-2 border border-gray-100">
+                    <div class="text-left">
+                        <div class="text-[9px] font-bold ${s.status === 'done' ? 'text-emerald-500' : 'text-gray-400'} uppercase">${s.status}</div>
+                        <div class="text-[11px] font-bold text-gray-800">${s.eng}</div>
+                    </div>
+                    <button onclick="deleteItem(${i})" class="text-rose-500 text-[10px] font-bold px-2">삭제</button>
+                </div>
+            `).join('');
+        }
+        function deleteItem(i) {
+            db[currentLang].splice(i, 1);
+            save(); renderManageList();
+        }
+        function searchVideo() {
+            const text = document.getElementById('eng-text').innerText;
+            if(text === "Loading..." || text === "Empty!") return;
+            window.open(`https://yarn.co/yarn-find?text=${encodeURIComponent(text)}`, '_blank');
         }
 
-        window.onload = () => { updateUI(); showRandom(null, false); };
+        window.onload = () => { showRandom(); };
     </script>
 </body>
 </html>
