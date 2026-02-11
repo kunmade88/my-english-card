@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Polyglot Master v8 (Edit Mode)</title>
+    <title>Polyglot Master v10 (Edit & Delete)</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
@@ -47,11 +47,11 @@
             <div class="card-box" onclick="this.classList.toggle('is-flipped')">
                 <div class="card-inner">
                     <div class="card-face card-front">
-                        <p id="display-eng" class="text-xl font-extrabold leading-snug"></p>
+                        <p id="display-eng" class="text-xl font-extrabold leading-snug px-2"></p>
                         <button onclick="speakText(event)" class="absolute bottom-8 w-12 h-12 bg-white/80 backdrop-blur rounded-full shadow-sm flex items-center justify-center">🔊</button>
                     </div>
                     <div class="card-face card-back">
-                        <p id="display-kor" class="text-lg font-semibold opacity-90"></p>
+                        <p id="display-kor" class="text-lg font-semibold opacity-90 px-2"></p>
                     </div>
                 </div>
             </div>
@@ -79,176 +79,106 @@
 
     <div id="overlay" class="hidden fixed inset-0 bg-slate-900/20 backdrop-blur-sm z-50 flex items-center justify-center p-8">
         <div id="m-add" class="hidden bg-white w-full rounded-[40px] p-8 shadow-2xl">
-            <h3 id="modal-title" class="font-bold mb-6">New Phrase</h3>
-            <input id="in-e" type="text" placeholder="Phrase" class="w-full bg-slate-50 p-4 rounded-2xl mb-3 outline-none">
-            <input id="in-k" type="text" placeholder="Meaning" class="w-full bg-slate-50 p-4 rounded-2xl mb-8 outline-none">
-            <button id="btn-save-action" onclick="saveItem()" class="w-full py-4 bg-indigo-600 text-white font-bold rounded-2xl">Save Card</button>
-            <button onclick="closeModal()" class="w-full mt-2 text-slate-300 text-xs py-2">Cancel</button>
+            <h3 id="modal-title" class="font-bold mb-6">Edit Card</h3>
+            <input id="in-e" type="text" placeholder="Phrase" class="w-full bg-slate-50 p-4 rounded-2xl mb-3 outline-none focus:ring-2 ring-indigo-200">
+            <input id="in-k" type="text" placeholder="Meaning" class="w-full bg-slate-50 p-4 rounded-2xl mb-8 outline-none focus:ring-2 ring-indigo-200">
+            <button onclick="saveItem()" class="w-full py-4 bg-indigo-600 text-white font-bold rounded-2xl">SAVE CARD</button>
+            <button onclick="closeModal()" class="w-full mt-2 text-slate-300 text-xs py-2">CANCEL</button>
         </div>
-        <div id="m-list" class="hidden bg-white w-full rounded-[40px] p-8 shadow-2xl h-[500px] flex flex-col">
-            <h3 class="font-bold mb-4">Manage Library</h3>
+        <div id="m-list" class="hidden bg-white w-full rounded-[40px] p-6 shadow-2xl h-[550px] flex flex-col">
+            <h3 class="font-bold mb-4">Library</h3>
             <div id="list-box" class="flex-1 overflow-y-auto space-y-2 pr-2 scrollbar-hide"></div>
-            <button onclick="closeModal()" class="w-full py-4 bg-slate-900 text-white font-bold rounded-2xl mt-4">Close</button>
+            <button onclick="closeModal()" class="w-full py-4 bg-slate-900 text-white font-bold rounded-2xl mt-4 shrink-0">CLOSE</button>
         </div>
     </div>
 
     <script>
-        // --- 400 Phrases Data Population ---
-        const raw = {
+        const initialRaw = {
             EN: [
-                {e: "Let's call it a day.", k: "오늘은 이만 하죠."}, {e: "I'm on the fence.", k: "결정을 못 내렸어요."}, {e: "It's not my cup of tea.", k: "제 취향이 아니에요."}, {e: "Keep me in the loop.", k: "계속 소식 알려주세요."}, {e: "Let's touch base next week.", k: "다음 주에 다시 얘기해요."}, {e: "Play it by ear.", k: "상황 봐서 결정해요."}, {e: "Cut to the chase.", k: "본론만 말해요."}, {e: "Think outside the box.", k: "새롭게 생각하세요."}, {e: "Get your act together.", k: "정신 좀 차려요."}, {e: "Break a leg!", k: "행운을 빌어요!"},
-                {e: "Under the weather.", k: "몸이 좀 안 좋아요."}, {e: "Back to square one.", k: "다시 처음부터네요."}, {e: "Long story short.", k: "요약하자면 이래요."}, {e: "By all means.", k: "물론이죠."}, {e: "Piece of cake.", k: "식은 죽 먹기죠."}, {e: "So far so good.", k: "지금까진 괜찮아요."}, {e: "I'm tied up.", k: "지금 너무 바빠요."}, {e: "Wrap it up.", k: "마무리 합시다."}, {e: "Clarify that.", k: "다시 설명해 주세요."}, {e: "Take your time.", k: "천천히 하세요."},
-                {e: "Hit the nail on the head.", k: "핵심을 찔렀네요."}, {e: "The best of both worlds.", k: "일거양득이네요."}, {e: "Costs an arm and a leg.", k: "너무 비싸요."}, {e: "Once in a blue moon.", k: "아주 드문 일이에요."}, {e: "Barking up the wrong tree.", k: "번지수를 잘못 찾았어요."}, {e: "Bite the bullet.", k: "어려움을 참고 해내다."}, {e: "Burn the midnight oil.", k: "밤샘 공부를 하다."}, {e: "Cold feet.", k: "겁이 나다 / 주저하다."}, {e: "Let the cat out of the bag.", k: "비밀을 누설하다."}, {e: "The ball is in your court.", k: "이제 당신 결정에 달렸어요."},
-                {e: "Pull yourself together.", k: "마음을 추스르세요."}, {e: "Through thick and thin.", k: "고난을 함께하며."}, {e: "Actions speak louder.", k: "말보다 행동이 중요하죠."}, {e: "Back to the drawing board.", k: "계획을 다시 짜야 해요."}, {e: "Blessing in disguise.", k: "전화위복."}, {e: "Cross that bridge when we get to it.", k: "그 문제는 그때 가서 생각해요."}, {e: "Don't count your chickens.", k: "김칫국부터 마시지 마세요."}, {e: "Every cloud has a silver lining.", k: "쥐구멍에도 볕들 날 있다."}, {e: "Give someone the benefit of the doubt.", k: "일단은 믿어주다."}, {e: "Ignorance is bliss.", k: "모르는 게 약이다."}
+                {e: "Let's pivot our strategy.", k: "전략을 수정해 봅시다."}, {e: "I'm swamped with work.", k: "업무가 너무 많아요."},
+                {e: "Could you elaborate?", k: "상세히 말씀해 주시겠어요?"}, {e: "Touch base next week.", k: "다음 주에 다시 연락하죠."},
+                {e: "Weigh the pros and cons.", k: "장단점을 따져보세요."}, {e: "May the Force be with you.", k: "포스가 함께하기를."},
+                {e: "Carpe diem. Seize the day.", k: "오늘을 즐겨라."}, {e: "I'm on a tight schedule.", k: "일정이 빡빡합니다."}
             ],
             JP: [
-                {e: "こんにちは", k: "안녕하세요 (낮)"}, {e: "ありがとうございます", k: "감사합니다"}, {e: "はじめまして", k: "처음 뵙겠습니다"}, {e: "お元気ですか？", k: "잘 지내세요?"}, {e: "いくらですか？", k: "얼마인가요?"}, {e: "すみません", k: "실례합니다/죄송합니다"}, {e: "はい", k: "네"}, {e: "いいえ", k: "아니요"}, {e: "わかります", k: "알겠습니다"}, {e: "トイレはどこですか？", k: "화장실이 어디인가요?"},
-                {e: "おはようございます", k: "안녕하세요 (아침)"}, {e: "こんばんは", k: "안녕하세요 (저녁)"}, {e: "おいしいです", k: "맛있습니다"}, {e: "これをお願いします", k: "이것을 부탁합니다"}, {e: "助けてください", k: "도와주세요"}, {e: "さようなら", k: "안녕히 가세요"}, {e: "おやすみなさい", k: "안녕히 주무세요"}, {e: "お名前は何ですか？", k: "이름이 무엇인가요?"}, {e: "日本に行きたいです", k: "일본에 가고 싶어요"}, {e: "お腹が空きました", k: "배가 고파요"}
+                {e: "チェックインをお願いします。", k: "체크인 부탁합니다."}, {e: "これはいくらですか？", k: "이것은 얼마인가요?"},
+                {e: "駅はどこにありますか？", k: "역은 어디에 있나요?"}, {e: "おススメは何ですか？", k: "추천은 무엇인가요?"}
             ],
             DE: [
-                {e: "Guten Tag", k: "안녕하세요 (낮)"}, {e: "Wie geht es dir?", k: "어떻게 지내요?"}, {e: "Danke schön", k: "감사합니다"}, {e: "Ich verstehe nicht.", k: "이해하지 못해요."}, {e: "Entschuldigung", k: "죄송합니다/실례합니다"}, {e: "Ja", k: "네"}, {e: "Nein", k: "아니요"}, {e: "Ich heiße...", k: "제 이름은 ...입니다."}, {e: "Wo ist die Toilette?", k: "화장실이 어디죠?"}, {e: "Guten Morgen", k: "안녕하세요 (아침)"}
+                {e: "Wo ist der Bahnhof?", k: "기차역이 어디인가요?"}, {e: "Wie viel kostet das?", k: "이것은 얼마인가요?"},
+                {e: "Ein Bier, bitte.", k: "맥주 한 잔 주세요."}
             ],
             FR: [
-                {e: "Bonjour", k: "안녕하세요"}, {e: "Comment ça va ?", k: "어떻게 지내세요?"}, {e: "Merci beaucoup", k: "매우 감사합니다"}, {e: "S'il vous plaît", k: "부탁합니다"}, {e: "Excusez-moi", k: "실례합니다"}, {e: "Pardon", k: "죄송합니다"}, {e: "Je ne sais pas.", k: "모르겠습니다."}, {e: "Enchanté", k: "만나서 반갑습니다"}, {e: "Oui", k: "네"}, {e: "Non", k: "아니요"}
+                {e: "Où sont les toilettes ?", k: "화장실이 어디인가요?"}, {e: "Je voudrais un café.", k: "커피 한 잔 원해요."},
+                {e: "L'addition, s'il vous plaît.", k: "계산서 주세요."}
             ]
         };
 
-        // Fill data up to 100 for each lang
+        // Populate 100 per language
         const finalDB = {};
         ['EN','JP','DE','FR'].forEach(l => {
-            finalDB[l] = (raw[l] || []).map(it => ({...it, w: 10}));
-            const curLen = finalDB[l].length;
-            for(let i=curLen; i<100; i++) {
-                finalDB[l].push({ e: `${l} Phrase ${i+1}`, k: `학습 예문 ${i+1}`, w: 10 });
+            finalDB[l] = (initialRaw[l] || []).map(it => ({...it, w: 10}));
+            for(let i=finalDB[l].length; i<100; i++) {
+                finalDB[l].push({ e: `${l} Practice Phrase ${i+1}`, k: `연습 문장 ${i+1}`, w: 10 });
             }
         });
 
-        let db = JSON.parse(localStorage.getItem('poly_v8')) || finalDB;
+        let db = JSON.parse(localStorage.getItem('poly_v10')) || finalDB;
         let curL = 'EN', curI = -1, myChart = null, editIdx = -1;
 
-        function save() { localStorage.setItem('poly_v8', JSON.stringify(db)); }
-
+        function save() { localStorage.setItem('poly_v10', JSON.stringify(db)); }
         function showNext() {
-            const list = db[curL];
-            if(!list.length) return;
-            let pool = [];
-            list.forEach((it, idx) => { for(let i=0; i<it.w; i++) pool.push(idx); });
+            const list = db[curL]; if(!list.length) return;
+            let pool = []; list.forEach((it, idx) => { for(let i=0; i<it.w; i++) pool.push(idx); });
             document.querySelector('.card-box').classList.remove('is-flipped');
             setTimeout(() => {
-                let next;
-                do { next = pool[Math.floor(Math.random()*pool.length)]; } while(next === curI && list.length > 1);
-                curI = next;
-                document.getElementById('display-eng').innerText = list[curI].e;
+                let next; do { next = pool[Math.floor(Math.random()*pool.length)]; } while(next === curI && list.length > 1);
+                curI = next; document.getElementById('display-eng').innerText = list[curI].e;
                 document.getElementById('display-kor').innerText = list[curI].k;
             }, 100);
         }
-
-        function rate(w) {
-            if(curI === -1) return;
-            db[curL][curI].w = w;
-            save();
-            showNext();
-        }
-
-        function changeLang(l) {
-            curL = l; curI = -1;
-            document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.id === `t-${l}`));
-            showNext();
-        }
-
-        function togglePage(p) {
-            document.getElementById('page-study').classList.toggle('hidden-page', p === 'stats');
-            document.getElementById('page-stats').classList.toggle('hidden-page', p === 'study');
-            if(p === 'stats') renderChart();
-        }
-
+        function rate(w) { if(curI === -1) return; db[curL][curI].w = w; save(); showNext(); }
+        function changeLang(l) { curL = l; curI = -1; document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.id === `t-${l}`)); showNext(); }
+        function togglePage(p) { document.getElementById('page-study').classList.toggle('hidden-page', p === 'stats'); document.getElementById('page-stats').classList.toggle('hidden-page', p === 'study'); if(p === 'stats') renderChart(); }
         function renderChart() {
-            const langs = ['EN','JP','DE','FR'];
-            const stats = langs.map(l => {
-                const total = db[l].length;
-                const mastered = db[l].filter(i => i.w === 1).length;
-                return { l, total, mastered, p: total ? Math.round((mastered/total)*100) : 0 };
-            });
-            const totalM = stats.reduce((a,b)=>a+b.mastered,0), totalT = stats.reduce((a,b)=>a+b.total,0);
-            document.getElementById('mastery-pct').innerText = (totalT ? Math.round((totalM/totalT)*100) : 0) + '%';
+            const stats = ['EN','JP','DE','FR'].map(l => ({ l, m: db[l].filter(i => i.w === 1).length, t: db[l].length }));
+            const totalM = stats.reduce((a,b)=>a+b.m,0), totalT = stats.reduce((a,b)=>a+b.t,0);
+            document.getElementById('mastery-pct').innerText = Math.round((totalM/totalT)*100) + '%';
             if(myChart) myChart.destroy();
-            myChart = new Chart(document.getElementById('statChart'), {
-                type: 'doughnut',
-                data: { datasets: [{ data: stats.map(s=>s.mastered+0.01), backgroundColor: ['#4f46e5','#22c55e','#f97316','#3b82f6'], borderWidth: 0 }] },
-                options: { cutout: '85%', plugins: { legend: { display: false } } }
-            });
-            document.getElementById('stat-container').innerHTML = stats.map(s => `
-                <div class="bg-slate-50 p-4 rounded-3xl flex justify-between items-center">
-                    <div><p class="text-[9px] font-black text-slate-400 mb-1">${s.l}</p><p class="text-sm font-bold">${s.mastered} / ${s.total} Mastered</p></div>
-                    <div class="font-black text-indigo-600">${s.p}%</div>
-                </div>`).join('');
+            myChart = new Chart(document.getElementById('statChart'), { type: 'doughnut', data: { datasets: [{ data: stats.map(s=>s.m+0.1), backgroundColor: ['#4f46e5','#22c55e','#f97316','#3b82f6'], borderWidth: 0 }] }, options: { cutout: '85%', plugins: { legend: { display: false } } } });
+            document.getElementById('stat-container').innerHTML = stats.map(s => `<div class="bg-slate-50 p-4 rounded-3xl flex justify-between items-center"><div><p class="text-[9px] font-black text-slate-400 mb-1">${s.l}</p><p class="text-sm font-bold">${s.m} / ${s.t} Mastered</p></div><div class="font-black text-indigo-600">${Math.round((s.m/s.t)*100)}%</div></div>`).join('');
         }
-
         function openModal(t, idx = -1) {
             document.getElementById('overlay').classList.remove('hidden');
-            const addM = document.getElementById('m-add');
-            const listM = document.getElementById('m-list');
-            addM.classList.toggle('hidden', t !== 'add' && t !== 'edit');
-            listM.classList.toggle('hidden', t !== 'list');
-
-            if(t === 'add') {
-                editIdx = -1;
-                document.getElementById('modal-title').innerText = "New Phrase";
-                document.getElementById('in-e').value = "";
-                document.getElementById('in-k').value = "";
-            } else if(t === 'edit') {
-                editIdx = idx;
-                document.getElementById('modal-title').innerText = "Edit Phrase";
-                document.getElementById('in-e').value = db[curL][idx].e;
-                document.getElementById('in-k').value = db[curL][idx].k;
-            } else if(t === 'list') {
-                renderList();
-            }
+            document.getElementById('m-add').classList.toggle('hidden', t !== 'add' && t !== 'edit');
+            document.getElementById('m-list').classList.toggle('hidden', t !== 'list');
+            if(t === 'add') { editIdx = -1; document.getElementById('modal-title').innerText = "New Phrase"; document.getElementById('in-e').value = ""; document.getElementById('in-k').value = ""; }
+            else if(t === 'edit') { editIdx = idx; document.getElementById('modal-title').innerText = "Edit Phrase"; document.getElementById('in-e').value = db[curL][idx].e; document.getElementById('in-k').value = db[curL][idx].k; }
+            else if(t === 'list') renderList();
         }
-
         function closeModal() { document.getElementById('overlay').classList.add('hidden'); }
-        
         function saveItem() {
             const e = document.getElementById('in-e').value, k = document.getElementById('in-k').value;
             if(!e || !k) return;
-            if(editIdx === -1) {
-                db[curL].push({e, k, w: 10});
-            } else {
-                db[curL][editIdx].e = e;
-                db[curL][editIdx].k = k;
-            }
-            save();
-            closeModal();
-            showNext();
+            if(editIdx === -1) db[curL].push({e, k, w: 10}); else { db[curL][editIdx].e = e; db[curL][editIdx].k = k; }
+            save(); closeModal(); showNext();
         }
-
         function renderList() {
             document.getElementById('list-box').innerHTML = db[curL].map((it, i) => `
-                <div class="bg-slate-50 p-4 rounded-2xl flex justify-between items-center border border-slate-100">
-                    <div class="flex-1 truncate mr-2 text-left cursor-pointer" onclick="openModal('edit', ${i})">
-                        <p class="text-[11px] font-bold text-slate-700 truncate">${it.e}</p>
+                <div class="bg-slate-50 p-3 rounded-2xl flex justify-between items-center border border-slate-100">
+                    <div class="flex-1 truncate mr-2">
+                        <p class="text-[10px] font-bold text-slate-700 truncate">${it.e}</p>
                         <p class="text-[9px] text-slate-400 truncate">${it.k}</p>
                     </div>
-                    <button onclick="delItem(${i})" class="text-red-400 font-black text-[10px] p-2 shrink-0">DEL</button>
+                    <div class="flex gap-1 shrink-0">
+                        <button onclick="openModal('edit', ${i})" class="bg-indigo-50 text-indigo-600 font-black text-[9px] px-3 py-2 rounded-xl">EDIT</button>
+                        <button onclick="delItem(${i})" class="bg-red-50 text-red-400 font-black text-[9px] px-3 py-2 rounded-xl">DEL</button>
+                    </div>
                 </div>`).join('');
         }
-
-        function delItem(i) {
-            if(confirm("Delete this card?")) {
-                db[curL].splice(i, 1);
-                save();
-                renderList();
-            }
-        }
-
-        function speakText(e) {
-            e.stopPropagation();
-            const msg = new SpeechSynthesisUtterance(document.getElementById('display-eng').innerText);
-            msg.lang = {EN:'en-US', JP:'ja-JP', DE:'de-DE', FR:'fr-FR'}[curL];
-            window.speechSynthesis.speak(msg);
-        }
+        function delItem(i) { if(confirm("Delete this card?")) { db[curL].splice(i, 1); save(); renderList(); } }
+        function speakText(e) { e.stopPropagation(); const msg = new SpeechSynthesisUtterance(document.getElementById('display-eng').innerText); msg.lang = {EN:'en-US', JP:'ja-JP', DE:'de-DE', FR:'fr-FR'}[curL]; window.speechSynthesis.speak(msg); }
         function searchYarn() { window.open(`https://yarn.co/yarn-find?text=${encodeURIComponent(document.getElementById('display-eng').innerText)}`, '_blank'); }
-
         window.onload = showNext;
     </script>
 </body>
