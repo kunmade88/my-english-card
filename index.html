@@ -1,261 +1,254 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Polyglot Flashcards Pro</title>
+    <title>Polyglot Master v5</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Noto+Sans+KR:wght@400;700;900&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
         
         body {
-            background-color: #f3f4f6;
+            background-color: #f8fafc;
             display: flex; align-items: center; justify-content: center;
-            min-height: 100vh; margin: 0; 
-            font-family: 'Inter', 'Noto Sans KR', sans-serif;
+            min-height: 100vh; margin: 0; font-family: 'Inter', sans-serif;
         }
 
         .main-shell {
-            width: 100%; max-width: 390px; height: 720px;
-            background: #ffffff; border-radius: 40px;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.1);
+            width: 100%; max-width: 380px; height: 700px;
+            background: #ffffff; border-radius: 48px;
+            box-shadow: 0 40px 100px -20px rgba(0, 0, 0, 0.1);
             position: relative; overflow: hidden;
             display: flex; flex-direction: column;
         }
 
-        /* Card Animation */
-        .card-box { perspective: 1000px; width: 100%; height: 320px; padding: 20px; }
+        /* Card System */
+        .card-box { perspective: 1000px; width: 100%; height: 340px; padding: 24px; }
         .card-inner { 
             position: relative; width: 100%; height: 100%; 
-            transition: transform 0.6s cubic-bezier(0.23, 1, 0.32, 1);
-            transform-style: preserve-3d;
+            transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            transform-style: preserve-3d; cursor: pointer;
         }
         .is-flipped .card-inner { transform: rotateY(180deg); }
         .card-face {
             position: absolute; width: 100%; height: 100%;
             backface-visibility: hidden;
-            border-radius: 30px; display: flex; align-items: center; justify-content: center;
-            padding: 30px; text-align: center;
+            border-radius: 40px; display: flex; align-items: center; justify-content: center;
+            padding: 32px; text-align: center;
         }
-        .card-front { background: #f9fafb; border: 1px solid #f1f5f9; color: #1f2937; }
+        .card-front { background: #f1f5f9; color: #0f172a; border: 1px solid rgba(0,0,0,0.03); }
         .card-back { background: #4f46e5; color: white; transform: rotateY(180deg); }
 
-        /* Review Buttons */
-        .rev-btn {
-            @apply flex-1 flex flex-col items-center justify-center py-5 rounded-3xl transition-all active:scale-95;
-            border: 1px solid rgba(0,0,0,0.03);
+        /* Rating Buttons */
+        .btn-grid { display: grid; grid-template-cols: repeat(4, 1fr); gap: 10px; padding: 0 24px; margin-bottom: 32px; }
+        .rate-btn {
+            @apply flex flex-col items-center justify-center py-4 rounded-3xl transition-all active:scale-90 border;
+            background: #ffffff;
         }
-        .rev-btn .label-en { font-size: 10px; font-weight: 900; letter-spacing: 0.05em; margin-bottom: 2px; }
-        .rev-btn .label-ko { font-size: 14px; font-weight: 700; }
-
-        /* Navigation Tabs */
-        .tab-active { color: #4f46e5; font-weight: 900; border-bottom: 2px solid #4f46e5; }
+        .rate-btn span { font-size: 11px; font-weight: 800; letter-spacing: -0.02em; }
         
-        .page { position: absolute; inset: 0; padding: 24px; transition: 0.4s; display: flex; flex-direction: column; }
-        .hide-left { transform: translateX(-100%); opacity: 0; pointer-events: none; }
-        .hide-right { transform: translateX(100%); opacity: 0; pointer-events: none; }
+        .btn-again { border-color: #fee2e2; color: #ef4444; }
+        .btn-hard { border-color: #ffedd5; color: #f97316; }
+        .btn-good { border-color: #dbeafe; color: #3b82f6; }
+        .btn-easy { border-color: #dcfce7; color: #22c55e; }
+
+        /* Tabs */
+        .tab-btn { @apply text-[11px] font-black transition-all; color: #cbd5e1; }
+        .tab-btn.active { color: #4f46e5; transform: scale(1.1); }
+        
+        .page { position: absolute; inset: 0; padding: 28px; transition: 0.4s ease; display: flex; flex-direction: column; }
+        .hidden-page { opacity: 0; pointer-events: none; transform: translateY(10px); }
     </style>
 </head>
 <body>
 
     <div class="main-shell">
         <div id="page-study" class="page">
-            <header class="flex justify-between items-center mb-10">
-                <div class="flex gap-4">
-                    <button onclick="changeLang('EN')" id="l-EN" class="pb-1 text-xs font-bold tab-active">EN</button>
-                    <button onclick="changeLang('JP')" id="l-JP" class="pb-1 text-xs font-bold text-gray-300">JP</button>
-                    <button onclick="changeLang('DE')" id="l-DE" class="pb-1 text-xs font-bold text-gray-300">DE</button>
-                    <button onclick="changeLang('FR')" id="l-FR" class="pb-1 text-xs font-bold text-gray-300">FR</button>
+            <div class="flex justify-between items-center mb-10">
+                <div class="flex gap-5">
+                    <button onclick="changeLang('EN')" id="t-EN" class="tab-btn active">EN</button>
+                    <button onclick="changeLang('JP')" id="t-JP" class="tab-btn">JP</button>
+                    <button onclick="changeLang('DE')" id="t-DE" class="tab-btn">DE</button>
+                    <button onclick="changeLang('FR')" id="t-FR" class="tab-btn">FR</button>
                 </div>
-                <button onclick="goToPage('stats')" class="text-[10px] font-black bg-gray-100 px-3 py-1.5 rounded-full text-gray-500">MY STATS</button>
-            </header>
+                <button onclick="togglePage('stats')" class="text-[10px] font-extrabold px-4 py-2 bg-gray-50 rounded-full text-gray-400 active:bg-gray-100">MY STATS</button>
+            </div>
 
-            <div class="card-box mb-6" id="card-trigger" onclick="this.classList.toggle('is-flipped')">
+            <div class="card-box" onclick="this.classList.toggle('is-flipped')">
                 <div class="card-inner">
                     <div class="card-face card-front">
-                        <p id="txt-main" class="text-2xl font-black break-keep leading-tight tracking-tight">Focus on progress.</p>
-                        <button onclick="speakText(event)" class="absolute bottom-6 w-12 h-12 bg-white rounded-full shadow-sm flex items-center justify-center border border-gray-100 active:scale-90 transition-transform">🔊</button>
+                        <p id="display-eng" class="text-2xl font-extrabold leading-tight tracking-tight">Consistency is key.</p>
+                        <button onclick="speakText(event)" class="absolute bottom-8 w-12 h-12 bg-white/80 backdrop-blur rounded-full shadow-sm flex items-center justify-center active:scale-75 transition-transform">🔊</button>
                     </div>
                     <div class="card-face card-back">
-                        <p id="txt-sub" class="text-xl font-bold break-keep">과정의 진전에 집중하세요.</p>
+                        <p id="display-kor" class="text-lg font-semibold opacity-90">꾸준함이 핵심입니다.</p>
                     </div>
                 </div>
             </div>
 
-            <div class="flex gap-3 mb-12">
-                <button onclick="rateDifficulty(50)" class="rev-btn bg-red-50 text-red-500">
-                    <span class="label-en">AGAIN</span><span class="label-ko">다시</span>
-                </button>
-                <button onclick="rateDifficulty(20)" class="rev-btn bg-orange-50 text-orange-500">
-                    <span class="label-en">HARD</span><span class="label-ko">어려움</span>
-                </button>
-                <button onclick="rateDifficulty(5)" class="rev-btn bg-blue-50 text-blue-500">
-                    <span class="label-en">GOOD</span><span class="label-ko">괜찮음</span>
-                </button>
-                <button onclick="rateDifficulty(1)" class="rev-btn bg-emerald-50 text-emerald-600">
-                    <span class="label-en">EASY</span><span class="label-ko">쉬움</span>
-                </button>
+            <div class="btn-grid">
+                <button onclick="rate(50)" class="rate-btn btn-again"><span>AGAIN</span></button>
+                <button onclick="rate(20)" class="rate-btn btn-hard"><span>HARD</span></button>
+                <button onclick="rate(5)" class="rate-btn btn-good"><span>GOOD</span></button>
+                <button onclick="rate(1)" class="rate-btn btn-easy"><span>EASY</span></button>
             </div>
 
-            <div class="grid grid-cols-3 gap-3">
-                <button onclick="openAdd()" class="py-4 bg-gray-50 rounded-3xl text-gray-400 font-bold text-xs border border-gray-100">Add Card</button>
-                <button onclick="openManage()" class="py-4 bg-gray-50 rounded-3xl text-gray-400 font-bold text-xs border border-gray-100">Manage</button>
-                <button onclick="searchYarn()" class="py-4 bg-indigo-600 rounded-3xl text-white font-bold text-xs shadow-lg shadow-indigo-100">Movie Clip</button>
+            <div class="grid grid-cols-3 gap-3 px-6 mt-auto">
+                <button onclick="openModal('add')" class="py-4 bg-gray-50 rounded-[24px] text-[11px] font-bold text-gray-400">ADD</button>
+                <button onclick="openModal('list')" class="py-4 bg-gray-50 rounded-[24px] text-[11px] font-bold text-gray-400">LIST</button>
+                <button onclick="searchYarn()" class="py-4 bg-indigo-600 rounded-[24px] text-[11px] font-bold text-white shadow-lg shadow-indigo-100">CLIP</button>
             </div>
         </div>
 
-        <div id="page-stats" class="page hide-right">
-            <div class="flex justify-between items-center mb-10">
-                <h2 class="text-xl font-black">Performance</h2>
-                <button onclick="goToPage('study')" class="text-gray-400">✕</button>
+        <div id="page-stats" class="page hidden-page">
+            <div class="flex justify-between items-center mb-8">
+                <h2 class="text-xl font-extrabold tracking-tight">Insights</h2>
+                <button onclick="togglePage('study')" class="w-10 h-10 flex items-center justify-center bg-gray-50 rounded-full">✕</button>
             </div>
-            <div class="relative h-48 mb-10 flex items-center justify-center">
+            <div class="relative h-48 mb-8 flex items-center justify-center">
                 <canvas id="statChart"></canvas>
                 <div class="absolute text-center">
-                    <p id="stat-val" class="text-3xl font-black">0%</p>
-                    <p class="text-[9px] font-bold text-gray-400">MASTERY</p>
+                    <p id="mastery-pct" class="text-3xl font-black text-slate-800">0%</p>
+                    <p class="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Mastery</p>
                 </div>
             </div>
-            <div id="stat-list" class="space-y-4 overflow-y-auto"></div>
+            <div id="stat-container" class="space-y-3 overflow-y-auto flex-1 pb-6"></div>
         </div>
     </div>
 
-    <div id="modal-wrap" class="hidden fixed inset-0 bg-black/20 backdrop-blur-sm z-50 flex items-center justify-center p-6">
-        <div id="modal-add" class="hidden bg-white w-full max-w-xs rounded-[40px] p-8 shadow-2xl">
-            <h3 class="font-black text-lg mb-6">New Phrase</h3>
-            <input id="in-eng" type="text" placeholder="Foreign Phrase" class="w-full bg-gray-50 p-4 rounded-2xl mb-3 outline-none border border-gray-100 focus:border-indigo-400">
-            <input id="in-kor" type="text" placeholder="Meaning" class="w-full bg-gray-50 p-4 rounded-2xl mb-8 outline-none border border-gray-100 focus:border-indigo-400">
-            <button onclick="saveNew()" class="w-full py-4 bg-indigo-600 text-white font-black rounded-2xl shadow-lg">Save Phrase</button>
-            <button onclick="closeModal()" class="w-full mt-2 text-gray-300 text-sm font-bold py-2">Cancel</button>
+    <div id="overlay" class="hidden fixed inset-0 bg-slate-900/20 backdrop-blur-sm z-50 flex items-center justify-center p-8">
+        <div id="m-add" class="hidden bg-white w-full rounded-[40px] p-8 shadow-2xl">
+            <h3 class="font-bold mb-6 text-slate-800">New Card</h3>
+            <input id="in-e" type="text" placeholder="Foreign Phrase" class="w-full bg-slate-50 p-4 rounded-2xl mb-3 outline-none focus:ring-2 ring-indigo-100 transition-all">
+            <input id="in-k" type="text" placeholder="Meaning (Korean)" class="w-full bg-slate-50 p-4 rounded-2xl mb-8 outline-none focus:ring-2 ring-indigo-100 transition-all">
+            <button onclick="saveItem()" class="w-full py-4 bg-indigo-600 text-white font-bold rounded-2xl shadow-xl">Save</button>
+            <button onclick="closeModal()" class="w-full mt-2 text-slate-300 text-xs font-bold py-2">Close</button>
         </div>
-        <div id="modal-list" class="hidden bg-white w-full max-w-xs rounded-[40px] p-8 shadow-2xl h-[500px] flex flex-col">
-            <h3 class="font-black text-lg mb-6">Manage Library</h3>
-            <div id="lib-items" class="flex-1 overflow-y-auto space-y-3 mb-6 pr-2"></div>
-            <button onclick="closeModal()" class="w-full py-4 bg-gray-900 text-white font-black rounded-2xl">Close</button>
+        <div id="m-list" class="hidden bg-white w-full rounded-[40px] p-8 shadow-2xl h-[450px] flex flex-col">
+            <h3 class="font-bold mb-4">Library</h3>
+            <div id="list-box" class="flex-1 overflow-y-auto space-y-2 pr-2"></div>
+            <button onclick="closeModal()" class="w-full py-4 bg-slate-900 text-white font-bold rounded-2xl mt-4">Close</button>
         </div>
     </div>
 
     <script>
-        const initialDB = {
-            EN: [{e: "Consistency is key.", k: "꾸준함이 답이다.", w: 10}],
+        const initial = {
+            EN: [{e: "Consistency is key.", k: "꾸준함이 핵심입니다.", w: 10}, {e: "Beyond your limits.", k: "한계를 넘어서.", w: 10}],
             JP: [{e: "継続は力なり", k: "계속하는 것이 힘이다.", w: 10}],
             DE: [{e: "Übung macht den Meister.", k: "연습이 대가를 만든다.", w: 10}],
             FR: [{e: "C'est la vie.", k: "그게 인생이죠.", w: 10}]
         };
 
-        let db = JSON.parse(localStorage.getItem('polyglot_v4')) || initialDB;
-        let curLang = 'EN';
-        let curIdx = -1;
-        let chartObj = null;
+        let db = JSON.parse(localStorage.getItem('poly_db_v5')) || initial;
+        let curL = 'EN', curI = -1, myChart = null;
 
-        function save() { localStorage.setItem('polyglot_v4', JSON.stringify(db)); }
+        function save() { localStorage.setItem('poly_db_v5', JSON.stringify(db)); }
 
         function showNext() {
-            const list = db[curLang];
-            if (list.length === 0) return;
-
+            const list = db[curL];
+            if (!list.length) {
+                document.getElementById('display-eng').innerText = "Empty List";
+                return;
+            }
+            
+            // Weight logic: Higher weight = more frequent
             let pool = [];
-            list.forEach((it, i) => { for(let n=0; n<it.w; n++) pool.push(i); });
+            list.forEach((item, idx) => {
+                for(let i=0; i < item.w; i++) pool.push(idx);
+            });
 
-            document.getElementById('card-trigger').classList.remove('is-flipped');
+            const cardBox = document.querySelector('.card-box');
+            cardBox.classList.remove('is-flipped');
+
             setTimeout(() => {
-                let n;
-                do { n = pool[Math.floor(Math.random()*pool.length)]; } while(n === curIdx && list.length > 1);
-                curIdx = n;
-                document.getElementById('txt-main').innerText = list[curIdx].e;
-                document.getElementById('txt-sub').innerText = list[curIdx].k;
-            }, 150);
+                let nextIdx;
+                do {
+                    nextIdx = pool[Math.floor(Math.random() * pool.length)];
+                } while(nextIdx === curI && list.length > 1);
+                
+                curI = nextIdx;
+                document.getElementById('display-eng').innerText = list[curI].e;
+                document.getElementById('display-kor').innerText = list[curI].k;
+            }, 100);
         }
 
-        function rateDifficulty(weight) {
-            if (curIdx === -1) return;
-            db[curLang][curIdx].w = weight;
+        function rate(weight) {
+            if (curI === -1) return;
+            db[curL][curI].w = weight;
             save();
-            showNext(); // 바로 다음 카드로
+            showNext(); // 클릭 시 즉시 다음 카드로 이동 보장
         }
 
         function changeLang(l) {
-            curLang = l; curIdx = -1;
-            ['EN','JP','DE','FR'].forEach(id => {
-                const btn = document.getElementById(`l-${id}`);
-                btn.className = id === l ? "pb-1 text-xs font-bold tab-active" : "pb-1 text-xs font-bold text-gray-300";
-            });
+            curL = l; curI = -1;
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.id === `t-${l}`));
             showNext();
         }
 
-        function goToPage(p) {
-            const study = document.getElementById('page-study');
-            const stats = document.getElementById('page-stats');
-            if(p === 'stats') {
-                study.classList.add('hide-left');
-                stats.classList.remove('hide-right');
-                renderStats();
-            } else {
-                study.classList.remove('hide-left');
-                stats.classList.add('hide-right');
-            }
+        function togglePage(p) {
+            document.getElementById('page-study').classList.toggle('hidden-page', p === 'stats');
+            document.getElementById('page-stats').classList.toggle('hidden-page', p === 'study');
+            if(p === 'stats') renderChart();
         }
 
-        function renderStats() {
-            const ctx = document.getElementById('statChart').getContext('2d');
+        function renderChart() {
             const langs = ['EN','JP','DE','FR'];
-            const data = langs.map(l => {
+            const stats = langs.map(l => {
                 const total = db[l].length;
-                const done = db[l].filter(i => i.w === 1).length;
-                return { l, total, done, p: total === 0 ? 0 : Math.round((done/total)*100) };
+                const mastered = db[l].filter(i => i.w === 1).length; // Easy(1)만 마스터로 처리
+                return { l, total, mastered, p: total ? Math.round((mastered/total)*100) : 0 };
             });
 
-            const avgP = Math.round(data.reduce((a,b)=>a+b.done,0) / Math.max(1, data.reduce((a,b)=>a+b.total,0)) * 100);
-            document.getElementById('stat-val').innerText = avgP + '%';
+            const totalM = stats.reduce((a,b)=>a+b.mastered, 0);
+            const totalT = stats.reduce((a,b)=>a+b.total, 0);
+            document.getElementById('mastery-pct').innerText = (totalT ? Math.round((totalM/totalT)*100) : 0) + '%';
 
-            if(chartObj) chartObj.destroy();
-            chartObj = new Chart(ctx, {
+            if(myChart) myChart.destroy();
+            myChart = new Chart(document.getElementById('statChart'), {
                 type: 'doughnut',
-                data: { datasets: [{ data: data.map(d=>d.done+0.1), backgroundColor: ['#4f46e5','#10b981','#f59e0b','#ef4444'], borderWidth: 0 }] },
-                options: { cutout: '80%', plugins: { legend: { display: false } } }
+                data: { datasets: [{ data: stats.map(s=>s.mastered + 0.1), backgroundColor: ['#4f46e5','#22c55e','#f97316','#3b82f6'], borderWidth: 0 }] },
+                options: { cutout: '85%', plugins: { legend: { display: false } } }
             });
 
-            document.getElementById('stat-list').innerHTML = data.map(d => `
-                <div class="bg-gray-50 p-4 rounded-3xl flex justify-between items-center">
-                    <div><p class="text-[10px] font-black text-gray-400">${d.l}</p><p class="text-sm font-bold">${d.done}/${d.total} Mastered</p></div>
-                    <div class="text-right font-black text-indigo-600">${d.p}%</div>
+            document.getElementById('stat-container').innerHTML = stats.map(s => `
+                <div class="bg-slate-50 p-4 rounded-3xl flex justify-between items-center">
+                    <div><p class="text-[9px] font-black text-slate-400 mb-1">${s.l} LIBRARY</p><p class="text-sm font-bold text-slate-700">${s.mastered} / ${s.total} Mastered</p></div>
+                    <div class="font-black text-indigo-600">${s.p}%</div>
                 </div>
             `).join('');
         }
 
-        function openAdd() { document.getElementById('modal-wrap').classList.remove('hidden'); document.getElementById('modal-add').classList.remove('hidden'); }
-        function openManage() { 
-            document.getElementById('modal-wrap').classList.remove('hidden'); 
-            document.getElementById('modal-list').classList.remove('hidden');
-            renderManage();
+        function openModal(t) {
+            document.getElementById('overlay').classList.remove('hidden');
+            document.getElementById('m-add').classList.toggle('hidden', t !== 'add');
+            document.getElementById('m-list').classList.toggle('hidden', t !== 'list');
+            if(t === 'list') renderList();
         }
-        function closeModal() { document.getElementById('modal-wrap').classList.add('hidden'); document.getElementById('modal-add').classList.add('hidden'); document.getElementById('modal-list').classList.add('hidden'); }
+        function closeModal() { document.getElementById('overlay').classList.add('hidden'); }
         
-        function saveNew() {
-            const e = document.getElementById('in-eng').value.trim();
-            const k = document.getElementById('in-kor').value.trim();
-            if(e && k) { db[curLang].push({e, k, w: 10}); save(); closeModal(); showNext(); }
+        function saveItem() {
+            const e = document.getElementById('in-e').value, k = document.getElementById('in-k').value;
+            if(e && k) { db[curL].push({e, k, w: 10}); save(); closeModal(); showNext(); }
         }
 
-        function renderManage() {
-            const box = document.getElementById('lib-items');
-            box.innerHTML = db[curLang].map((it, i) => `
-                <div class="bg-gray-50 p-4 rounded-2xl flex justify-between items-center border border-gray-100">
-                    <div class="text-left pr-2"><p class="text-[11px] font-bold text-gray-800 leading-tight">${it.e}</p></div>
-                    <button onclick="delItem(${i})" class="text-red-500 font-bold text-[10px]">DEL</button>
+        function renderList() {
+            document.getElementById('list-box').innerHTML = db[curL].map((it, i) => `
+                <div class="bg-slate-50 p-4 rounded-2xl flex justify-between items-center border border-slate-100">
+                    <p class="text-xs font-bold text-slate-600 truncate mr-2">${it.e}</p>
+                    <button onclick="delItem(${i})" class="text-red-400 font-black text-[10px]">DEL</button>
                 </div>
             `).join('');
         }
-        function delItem(i) { db[curLang].splice(i, 1); save(); renderManage(); }
+        function delItem(i) { db[curL].splice(i, 1); save(); renderList(); }
 
-        function speakText(ev) {
-            ev.stopPropagation();
-            const speech = new SpeechSynthesisUtterance(document.getElementById('txt-main').innerText);
-            speech.lang = {EN:'en-US', JP:'ja-JP', DE:'de-DE', FR:'fr-FR'}[curLang];
-            window.speechSynthesis.speak(speech);
+        function speakText(e) {
+            e.stopPropagation();
+            const msg = new SpeechSynthesisUtterance(document.getElementById('display-eng').innerText);
+            msg.lang = {EN:'en-US', JP:'ja-JP', DE:'de-DE', FR:'fr-FR'}[curL];
+            window.speechSynthesis.speak(msg);
         }
-        function searchYarn() { window.open(`https://yarn.co/yarn-find?text=${encodeURIComponent(document.getElementById('txt-main').innerText)}`, '_blank'); }
+        function searchYarn() { window.open(`https://yarn.co/yarn-find?text=${encodeURIComponent(document.getElementById('display-eng').innerText)}`, '_blank'); }
 
         window.onload = showNext;
     </script>
