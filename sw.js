@@ -1,9 +1,9 @@
 /* 오프라인 캐시. 파일을 바꾸면 VERSION 을 올려 주세요. */
-const VERSION = 'poly-v13-2';
+const VERSION = 'poly-v14-1';
 const ASSETS = [
   './', './index.html', './manifest.webmanifest',
   './icon-192.png', './icon-512.png',
-  './assets/app.css', './assets/chart.umd.js', './assets/speak.js',
+  './assets/app.css', './assets/chart.umd.js', './assets/speak.js', './assets/extract.js',
   './assets/inter-400.woff2', './assets/inter-600.woff2', './assets/inter-800.woff2'
 ];
 self.addEventListener('install', (e) => {

@@ -74,9 +74,10 @@
                 <button onclick="rate(1)" class="rate-btn btn-easy"><span>EASY</span></button>
             </div>
 
-            <div class="grid grid-cols-3 gap-3 px-6 mt-auto">
+            <div class="grid grid-cols-4 gap-2 px-6 mt-auto">
                 <button onclick="openModal('add')" class="py-4 bg-gray-50 rounded-[24px] text-[10px] font-bold text-gray-400">ADD</button>
                 <button onclick="openModal('list')" class="py-4 bg-gray-50 rounded-[24px] text-[10px] font-bold text-gray-400">LIST</button>
+                <button onclick="openFind()" class="py-4 bg-indigo-50 rounded-[24px] text-[10px] font-bold text-indigo-600">FIND</button>
                 <button onclick="searchYarn()" class="py-4 bg-indigo-600 rounded-[24px] text-[10px] font-bold text-white shadow-lg">CLIP</button>
             </div>
         </div>
@@ -130,6 +131,47 @@
             <button id="sp-judgeonly" onclick="judgeOnly()" class="hidden w-full py-3 bg-emerald-50 text-emerald-600 rounded-2xl text-[10px] font-bold mb-3">🗣 판정만 하기</button>
             <p id="sp-msg" class="text-[10px] text-slate-400 mb-3 min-h-[14px] whitespace-pre-line"></p>
             <button onclick="closeSpeak()" class="w-full py-3 text-slate-300 text-xs">CLOSE</button>
+        </div>
+        <div id="m-find" class="hidden bg-white w-full max-w-[380px] rounded-[40px] p-6 shadow-2xl max-h-[90vh] flex flex-col">
+            <div class="flex justify-between items-center mb-1">
+                <h3 class="font-bold">Find Phrases</h3>
+                <button onclick="fxStep('key')" id="fx-keystate" class="text-[9px] font-bold px-3 py-2 bg-gray-50 rounded-full text-gray-400"></button>
+            </div>
+            <p class="text-[10px] text-slate-400 mb-4">자주 쓰는 <span id="fx-lang">English</span> 표현을 골라 카드로 저장해요</p>
+
+            <div id="fx-input" class="flex flex-col">
+                <textarea id="fx-in" rows="6" placeholder="유튜브 주소, 웹 글 주소, 또는 원문(자막·글귀)을 붙여넣으세요" class="w-full bg-slate-50 p-4 rounded-2xl mb-3 outline-none focus:ring-2 ring-indigo-200 text-sm resize-none"></textarea>
+                <button id="fx-go" onclick="fxGo()" class="w-full py-4 bg-indigo-600 text-white font-bold rounded-2xl mb-2">✨ 표현 추출하기</button>
+                <button onclick="fxCopyPrompt()" class="w-full py-3 bg-slate-50 text-slate-500 font-bold rounded-2xl text-[11px]">📋 채팅으로 하기 (Claude · Gemini 앱)</button>
+                <p id="fx-msg" class="text-[10px] text-red-400 mt-3 min-h-[14px] whitespace-pre-line"></p>
+            </div>
+
+            <div id="fx-paste" class="hidden flex flex-col">
+                <p class="text-[11px] text-slate-500 mb-2 leading-relaxed">① 복사된 프롬프트를 Claude나 Gemini 채팅에 붙여넣기<br>② 답변의 결과(코드 블록)를 복사<br>③ 아래에 붙여넣기</p>
+                <textarea id="fx-paste-in" rows="7" placeholder="채팅 결과를 여기에 붙여넣으세요" class="w-full bg-slate-50 p-4 rounded-2xl mb-3 outline-none focus:ring-2 ring-indigo-200 text-xs resize-none"></textarea>
+                <button onclick="fxParsePasted()" class="w-full py-4 bg-indigo-600 text-white font-bold rounded-2xl mb-2">결과 불러오기</button>
+                <button onclick="fxStep('input')" class="w-full py-2 text-slate-300 text-xs">← 뒤로</button>
+            </div>
+
+            <div id="fx-result" class="hidden flex flex-col min-h-0">
+                <div class="flex justify-between items-center mb-2"><p class="text-[10px] font-black text-slate-400">FOUND</p><button onclick="fxAll()" class="text-[10px] font-bold text-indigo-600">전체 선택/해제</button></div>
+                <div id="fx-list" class="flex-1 overflow-y-auto space-y-2 scrollbar-hide mb-3 min-h-0"></div>
+                <button id="fx-save" onclick="fxSave()" class="w-full py-4 bg-indigo-600 text-white font-bold rounded-2xl mb-2 shrink-0">저장</button>
+                <button onclick="fxStep('input')" class="w-full py-2 text-slate-300 text-xs shrink-0">← 다시 찾기</button>
+            </div>
+
+            <div id="fx-key" class="hidden flex flex-col">
+                <p class="text-[11px] text-slate-500 mb-3 leading-relaxed">Gemini API 키(무료)를 한 번만 넣으면 버튼 하나로 추출돼요. 키는 <b>이 휴대폰에만</b> 저장되고 백업 파일에도 들어가지 않아요.</p>
+                <ol class="text-[10px] text-slate-400 mb-3 list-decimal pl-4 space-y-1">
+                    <li><a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener" class="text-indigo-600 font-bold underline">aistudio.google.com/apikey</a> 열기 (구글 로그인)</li>
+                    <li>[API 키 만들기] → 생성된 키 복사</li>
+                    <li>아래에 붙여넣고 저장</li>
+                </ol>
+                <input id="fx-key-in" type="password" autocomplete="off" placeholder="AIza…" class="w-full bg-slate-50 p-4 rounded-2xl mb-3 outline-none focus:ring-2 ring-indigo-200 text-sm">
+                <button id="fx-keysave" onclick="fxSaveKey()" class="w-full py-4 bg-indigo-600 text-white font-bold rounded-2xl mb-2">저장하고 연결 확인</button>
+                <div class="flex justify-between"><button onclick="fxStep('input')" class="py-2 text-slate-300 text-xs">← 뒤로</button><button onclick="fxRemoveKey()" class="py-2 text-red-300 text-xs">키 지우기</button></div>
+            </div>
+            <button onclick="closeFind()" class="w-full py-2 text-slate-300 text-xs mt-1 shrink-0">CLOSE</button>
         </div>
     </div>
     <div id="toast" class="hidden fixed bottom-8 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-xs font-bold px-4 py-3 rounded-2xl z-[60]"></div>
@@ -297,7 +339,7 @@
                 else { do { next = pool[Math.floor(Math.random()*pool.length)]; } while(next === curI && list.length > 1); }
                 curI = next; 
                 document.getElementById('display-eng').innerText = list[curI].e;
-                document.getElementById('display-kor').innerText = list[curI].k;
+                document.getElementById('display-kor').innerText = list[curI].k + (list[curI].ex ? '\n\n' + list[curI].ex : '');
             }, 100);
         }
 
@@ -319,6 +361,7 @@
             document.getElementById('m-add').classList.toggle('hidden', t !== 'add' && t !== 'edit');
             document.getElementById('m-list').classList.toggle('hidden', t !== 'list');
             document.getElementById('m-speak').classList.add('hidden');
+            document.getElementById('m-find').classList.add('hidden');
             if(t === 'add') { editIdx = -1; document.getElementById('modal-title').innerText = "New Phrase"; document.getElementById('in-e').value = ""; document.getElementById('in-k').value = ""; }
             else if(t === 'edit') { editIdx = idx; document.getElementById('modal-title').innerText = "Edit Phrase"; document.getElementById('in-e').value = db[curL][idx].e; document.getElementById('in-k').value = db[curL][idx].k; }
             else if(t === 'list') renderList();
@@ -353,5 +396,6 @@
         window.onload = () => { showNext(); updateAccentUI(); };
     </script>
     <script src="assets/speak.js"></script>
+    <script src="assets/extract.js"></script>
 </body>
 </html>
