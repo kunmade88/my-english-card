@@ -140,14 +140,14 @@
             <p class="text-[10px] text-slate-400 mb-4">자주 쓰는 <span id="fx-lang">English</span> 표현을 골라 카드로 저장해요</p>
 
             <div id="fx-input" class="flex flex-col">
-                <textarea id="fx-in" rows="6" placeholder="유튜브 주소, 웹 글 주소, 또는 원문(자막·글귀)을 붙여넣으세요" class="w-full bg-slate-50 p-4 rounded-2xl mb-3 outline-none focus:ring-2 ring-indigo-200 text-sm resize-none"></textarea>
+                <textarea id="fx-in" oninput="fxInput()" rows="6" placeholder="유튜브 주소, 웹 글 주소, 또는 원문(자막·글귀)을 붙여넣으세요" class="w-full bg-slate-50 p-4 rounded-2xl mb-3 outline-none focus:ring-2 ring-indigo-200 text-sm resize-none"></textarea>
                 <button id="fx-go" onclick="fxGo()" class="w-full py-4 bg-indigo-600 text-white font-bold rounded-2xl mb-2">✨ 표현 추출하기</button>
                 <button onclick="fxCopyPrompt()" class="w-full py-3 bg-slate-50 text-slate-500 font-bold rounded-2xl text-[11px]">📋 채팅으로 하기 (Claude · Gemini 앱)</button>
                 <p id="fx-msg" class="text-[10px] text-red-400 mt-3 min-h-[14px] whitespace-pre-line"></p>
             </div>
 
             <div id="fx-paste" class="hidden flex flex-col">
-                <p class="text-[11px] text-slate-500 mb-2 leading-relaxed">① 복사된 프롬프트를 Claude나 Gemini 채팅에 붙여넣기<br>② 답변의 결과(코드 블록)를 복사<br>③ 아래에 붙여넣기</p>
+                <p class="text-[11px] text-slate-500 mb-2 leading-relaxed">① 복사된 프롬프트를 Claude나 Gemini 채팅에 붙여넣고 보내기 <span class="text-slate-400">(유튜브는 Gemini 앱 권장)</span><br>② 답변의 결과(코드 블록)를 복사<br>③ 아래에 붙여넣기</p>
                 <textarea id="fx-paste-in" rows="7" placeholder="채팅 결과를 여기에 붙여넣으세요" class="w-full bg-slate-50 p-4 rounded-2xl mb-3 outline-none focus:ring-2 ring-indigo-200 text-xs resize-none"></textarea>
                 <button onclick="fxParsePasted()" class="w-full py-4 bg-indigo-600 text-white font-bold rounded-2xl mb-2">결과 불러오기</button>
                 <button onclick="fxStep('input')" class="w-full py-2 text-slate-300 text-xs">← 뒤로</button>

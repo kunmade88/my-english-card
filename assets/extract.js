@@ -89,12 +89,21 @@
   }
 
   async function apiError(r) {
-    let msg = '';
-    try { const j = await r.json(); msg = (j.error && j.error.message) || ''; } catch (e) { }
+    let msg = '', details = [];
+    try { const j = await r.json(); msg = (j.error && j.error.message) || ''; details = (j.error && j.error.details) || []; } catch (e) { }
     if (r.status === 400 && /api key/i.test(msg)) return new Error('API 키가 올바르지 않아요. 설정에서 다시 확인해 주세요.');
     if (r.status === 403) return new Error('API 키 권한이 없어요. (키 제한 설정이나 결제 상태를 확인해 주세요)');
     if (r.status === 503 || r.status === 500 || /high demand|overloaded|unavailable/i.test(msg)) { const e = new Error('Gemini 서버가 지금 혼잡해요. 잠시 뒤 다시 하거나 [📋 채팅으로 하기]를 써 주세요.'); e.status = r.status || 503; e.busy = true; return e; }
-    if (r.status === 429) return new Error('무료 사용 한도를 넘었어요. 잠시 뒤 다시 하거나 [📋 채팅으로 하기]를 써 주세요.');
+    if (r.status === 429) {
+      // 하루 한도인지 1분 한도인지 구분해서 언제 다시 되는지 알려준다
+      const blob = msg + ' ' + JSON.stringify(details);
+      const daily = /per.?day|PerDay|daily/i.test(blob);
+      const ri = details.find((d) => d && d.retryDelay);
+      const sec = ri ? parseInt(String(ri.retryDelay), 10) : 0;
+      const when = daily ? '하루 무료 한도를 다 썼어요. 한국 시간 오후 4~5시쯤 초기화돼요.'
+        : '1분 무료 한도를 넘었어요. ' + (sec ? sec + '초 뒤' : '1분 뒤') + ' 다시 해 주세요.';
+      const e = new Error(when + '\n👉 지금 바로 하려면 [📋 채팅으로 하기]를 써 주세요.'); e.status = 429; e.daily = daily; return e;
+    }
     const e = new Error((msg || ('오류 ' + r.status)).slice(0, 200)); e.status = r.status; return e;
   }
 
@@ -168,6 +177,8 @@
             attempt--; continue;
           }
           if (e.status === 404) break;
+          if (e.status === 429 && e.daily) { i = models.length; break; }
+          if (e.status === 429) break;                     // 1분 한도는 모델별 → 같은 모델 재시도 없이 다음 모델
           if (e.busy || e.status === 429 || e.timeout) { if (!yt && attempt === 0 && i === 0) await sleep(2500); continue; }
           i = models.length; break;
         }
@@ -205,7 +216,7 @@
     const k = key();
     $('fx-keystate').textContent = k ? 'Gemini ✓' : 'Gemini 키 없음';
     $('fx-keystate').title = lsGet('poly_gemini_model', '');
-    $('fx-go').textContent = k ? '✨ 표현 추출하기' : '✨ Gemini 연결하고 추출하기';
+    $('fx-go').textContent = isYoutube() ? '▶ Gemini 앱에서 추출하기 (무료)' : k ? '✨ 표현 추출하기' : '✨ Gemini 연결하고 추출하기';
   }
 
   let busyText = '', busyT0 = 0, busyTimer = null;
@@ -219,9 +230,24 @@
   }
   function setMsg(m) { $('fx-msg').textContent = m || ''; }
 
+  // 유튜브는 API 무료 한도로 감당하기 어려워서 Gemini 앱(무료)으로 보낸다
+  function isYoutube() { return classify($('fx-in').value || '').kind === 'youtube'; }
+  function viaGeminiApp() {
+    const p = buildPrompt(classify($('fx-in').value), true);
+    const go = () => {
+      showStep('paste');
+      toast('프롬프트를 복사했어요. Gemini 앱에 붙여넣고 보내 주세요', 4000);
+      window.open('https://gemini.google.com/app', '_blank', 'noopener');
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(p).then(go, () => fallbackCopy(p, go));
+    else fallbackCopy(p, go);
+  }
+  window.fxInput = function () { if (!$('fx-go').disabled) renderKeyState(); setMsg(''); };
+
   window.fxGo = async function () {
     const raw = $('fx-in').value;
     if (!raw.trim()) { setMsg('주소나 원문을 넣어 주세요.'); return; }
+    if (isYoutube()) { viaGeminiApp(); return; }
     if (!key()) { showStep('key'); return; }
     if (!navigator.onLine) { setMsg('인터넷 연결이 필요해요.'); return; }
     const src = classify(raw);
