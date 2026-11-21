@@ -188,7 +188,7 @@
     if (e.status === 404) { lsSet('poly_gemini_model', null); throw new Error('모델 목록이 바뀌었어요. 한 번 더 눌러 주세요.'); }
     if (yt) {
       const why = e.timeout ? '영상 분석이 너무 오래 걸려요.' : e.busy || e.status === 429 ? 'Gemini 서버가 지금 혼잡해요.' : e.status === 400 ? '이 영상을 읽지 못했어요 (비공개·연령제한 등).' : (e.message || '영상을 처리하지 못했어요.');
-      const err = new Error(why + '\n👉 [📋 채팅으로 하기]를 누르고 Gemini 앱에 붙여넣으면 영상을 직접 보고 추출해 줘요.\n👉 또는 유튜브 [스크립트 표시]의 자막을 복사해 붙여넣어 주세요.');
+      const err = new Error(why + '\n👉 [📋 채팅으로 하기]를 누르고 Gemini 앱에 붙여넣으면 영상을 직접 보고 추출해 줘요.');
       throw err;
     }
     if (src.kind === 'url' && e.status === 400) throw new Error('이 페이지를 읽지 못했어요. 글 내용을 복사해 붙여넣어 주세요.');
@@ -236,6 +236,7 @@
     const p = buildPrompt(classify($('fx-in').value), true);
     const go = () => {
       showStep('paste');
+      $('fx-yt-hint').classList.remove('hidden');
       toast('프롬프트를 복사했어요. Gemini 앱에 붙여넣고 보내 주세요', 4000);
       window.open('https://gemini.google.com/app', '_blank', 'noopener');
     };
@@ -262,7 +263,17 @@
     } finally { setBusy(false); }
   };
 
+  // Gemini 가 영상을 못 읽을 때: 자막 원문을 받아서 다시 FIND 에 넣게 한다
+  window.fxCopyTranscriptAsk = function () {
+    const src = classify($('fx-in').value || '');
+    const t = (src.url || '') + '\n\nWrite out the full spoken transcript of this video in its original language, as plain text only. No timestamps, no summary.';
+    const done = () => { toast('자막 요청 문구를 복사했어요. Gemini 앱에 붙여넣어 주세요', 3500); window.open('https://gemini.google.com/app', '_blank', 'noopener'); };
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(done, () => fallbackCopy(t, done));
+    else fallbackCopy(t, done);
+  };
+
   window.fxCopyPrompt = function () {
+    $('fx-yt-hint').classList.add('hidden');
     const raw = $('fx-in').value;
     if (!raw.trim()) { setMsg('주소나 원문을 먼저 넣어 주세요.'); return; }
     const p = buildPrompt(classify(raw), true);
