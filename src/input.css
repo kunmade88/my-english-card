@@ -1,0 +1,9 @@
+/* Tailwind 빌드 입력 파일. index.html 에 새 Tailwind 클래스를 쓰면 README 의 빌드 명령으로 assets/app.css 를 다시 만드세요. */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer components {
+  .rate-btn { @apply flex flex-col items-center justify-center py-4 rounded-3xl transition-all active:scale-90 border bg-white; }
+  .tab-btn { @apply text-[11px] font-black transition-all text-slate-300; }
+}
