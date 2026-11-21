@@ -127,6 +127,7 @@
                 <span>단어별 자동 판정 <span class="font-normal">(인터넷 필요 · 음성이 Google로 전송)</span></span>
                 <input id="sp-judge" type="checkbox" onchange="setJudge(this.checked)" class="w-4 h-4 accent-indigo-600">
             </label>
+            <button id="sp-judgeonly" onclick="judgeOnly()" class="hidden w-full py-3 bg-emerald-50 text-emerald-600 rounded-2xl text-[10px] font-bold mb-3">🗣 판정만 하기</button>
             <p id="sp-msg" class="text-[10px] text-slate-400 mb-3 min-h-[14px] whitespace-pre-line"></p>
             <button onclick="closeSpeak()" class="w-full py-3 text-slate-300 text-xs">CLOSE</button>
         </div>

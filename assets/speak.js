@@ -138,6 +138,7 @@
     $('sp-target').textContent = target;
     $('sp-msg').textContent = '';
     $('sp-judge').checked = judgeOn();
+    showJudgeOnly(judgeOn());
     updateAccentUI();
     setMine(null);
     recGet(recKey(curL, target)).then((r) => { if (r) setMine(r); }).catch(() => { });
@@ -209,6 +210,14 @@
     try { if (mr && mr.state !== 'inactive') mr.stop(); } catch (e) { }
     if (recog) { try { recog.stop(); } catch (e) { } }
   }
+  // 인식이 완전히 끝날 때까지(최대 ms) 기다린다
+  function waitRecog(ms) {
+    return new Promise((res) => {
+      if (!recogDone) { res(); return; }
+      let fin = false; const end = () => { if (!fin) { fin = true; res(); } };
+      recogDone.then(end); setTimeout(end, ms);
+    });
+  }
   function onRecStop() {
     if (stream) { stream.getTracks().forEach((t) => t.stop()); stream = null; }
     const blob = new Blob(chunks, { type: (mr && mr.mimeType) || 'audio/webm' });
@@ -219,11 +228,15 @@
     // 음성 인식 결과는 조금 늦게 올 수 있음
     const save = () => recPut(rec).catch(() => toast('녹음을 저장하지 못했어요'));
     if (judgeOn()) {
-      setTimeout(() => {
-        if (heard) { rec.judge = { heard }; showJudge(heard, true); }
-        else { $('sp-msg').textContent = recogErr || '판정 결과를 받지 못했어요. (인터넷 연결을 확인해 주세요)'; }
+      waitRecog(5000).then(() => {
+        const got = heard || interim;
+        if (got) { rec.judge = { heard: got }; showJudge(got, true); }
+        else {
+          $('sp-msg').textContent = (recogErr || '이 기기는 녹음과 판정을 동시에 못 하는 것 같아요.') + '\n아래 [🗣 판정만 하기]를 누르고 한 번 더 읽어 주세요.';
+          showJudgeOnly(true);
+        }
         save();
-      }, 1200);
+      });
     } else { save(); }
   }
 
@@ -236,23 +249,31 @@
       return;
     }
     lsSet('poly_judge', on ? '1' : '0');
+    showJudgeOnly(on);
     if (on && !navigator.onLine) toast('지금은 오프라인이라 판정이 안 될 수 있어요', 3000);
   };
-  function startRecog() {
+  let interim = '', recogDone = null;
+  function startRecog(onFinish) {
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-    heard = ''; recogErr = '';
+    heard = ''; interim = ''; recogErr = ''; recogDone = null;
     if (!SR) return;
     try {
       recog = new SR();
       recog.lang = langCode();
-      recog.interimResults = false;
+      recog.interimResults = true;   // 중간 결과도 받아 둔다 (늦게 끝나는 기기 대비)
       recog.maxAlternatives = 1;
-      recog.continuous = true;
+      recog.continuous = false;      // 안드로이드에서 continuous 는 불안정
+      let resolveDone; recogDone = new Promise((r) => { resolveDone = r; });
       recog.onresult = (ev) => {
-        let t = '';
-        for (let i = 0; i < ev.results.length; i++) t += ev.results[i][0].transcript + ' ';
-        heard = t.trim();
+        let fin = '', mid = '';
+        for (let i = 0; i < ev.results.length; i++) {
+          if (ev.results[i].isFinal) fin += ev.results[i][0].transcript + ' ';
+          else mid += ev.results[i][0].transcript + ' ';
+        }
+        if (fin.trim()) heard = fin.trim();
+        if (mid.trim()) interim = mid.trim();
       };
+      const origEnd = () => { recog = null; resolveDone(); if (onFinish) onFinish(); };
       recog.onerror = (ev) => {
         recogErr = ({
           'no-speech': '말소리가 인식되지 않았어요.',
@@ -261,10 +282,33 @@
           'network': '인터넷 연결이 필요해요.'
         })[ev.error] || ('판정 오류: ' + ev.error);
       };
-      recog.onend = () => { recog = null; };
+      recog.onend = origEnd;
       recog.start();
-    } catch (e) { recogErr = '판정을 시작하지 못했어요.'; }
+    } catch (e) { recogErr = '판정을 시작하지 못했어요.'; recogDone = null; }
   }
+
+  // 녹음 없이 판정만 (마이크를 음성 인식 혼자 쓰게 해서 동시 사용 문제를 피함)
+  let judging = false;
+  function showJudgeOnly(on) { const b = $('sp-judgeonly'); if (b) b.classList.toggle('hidden', !on); }
+  window.judgeOnly = function () {
+    if (judging || recording) return;
+    if (!(window.SpeechRecognition || window.webkitSpeechRecognition)) { toast('이 브라우저는 음성 인식을 지원하지 않아요'); return; }
+    stopAudio(); if (window.speechSynthesis) speechSynthesis.cancel();
+    judging = true;
+    const b = $('sp-judgeonly'); b.textContent = '듣고 있어요… 문장을 읽어 주세요';
+    $('sp-msg').textContent = '';
+    startRecog(() => {
+      judging = false; b.textContent = '🗣 판정만 하기';
+      const got = heard || interim;
+      if (got) {
+        showJudge(got, true);
+        recGet(recKey(curL, target)).then((r) => { if (r) { r.judge = { heard: got }; recPut(r); } }).catch(() => { });
+      } else {
+        $('sp-msg').textContent = recogErr || '말소리를 알아듣지 못했어요. 조금 더 크게 읽어 주세요.';
+      }
+    });
+    if (!recogDone) { judging = false; b.textContent = '🗣 판정만 하기'; $('sp-msg').textContent = recogErr; }
+  };
 
   // 비교용 토큰화: 일본어는 글자 단위, 나머지는 단어 단위
   function tokens(str, l) {
