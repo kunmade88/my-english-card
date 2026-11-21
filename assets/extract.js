@@ -98,10 +98,20 @@
     const e = new Error((msg || ('오류 ' + r.status)).slice(0, 200)); e.status = r.status; return e;
   }
 
-  async function callGemini(model, body) {
-    const r = await fetch(API + '/models/' + encodeURIComponent(model) + ':generateContent', {
-      method: 'POST', headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key() }, body: JSON.stringify(body)
-    });
+  let ctrl = null;   // 진행 중인 요청 (CLOSE 하면 취소)
+  async function callGemini(model, body, timeoutMs) {
+    ctrl = new AbortController();
+    let timedOut = false;
+    const t = setTimeout(() => { timedOut = true; ctrl.abort(); }, timeoutMs || 60000);
+    let r;
+    try {
+      r = await fetch(API + '/models/' + encodeURIComponent(model) + ':generateContent', {
+        method: 'POST', headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key() }, body: JSON.stringify(body), signal: ctrl.signal
+      });
+    } catch (e) {
+      const err = new Error(timedOut ? '너무 오래 걸려서 멈췄어요.' : '취소했어요.');
+      err.timeout = timedOut; err.cancelled = !timedOut; throw err;
+    } finally { clearTimeout(t); }
     if (!r.ok) throw await apiError(r);
     const j = await r.json();
     const parts = (((j.candidates || [])[0] || {}).content || {}).parts || [];
@@ -123,35 +133,55 @@
     // 예전 버전에서 연결한 경우 예비 모델 목록이 없으므로 새로 받아 둔다
     const first = lsGet('poly_gemini_models', '') ? await pickModel(false) : await pickModel(true);
     const prompt = buildPrompt(src, false);
-    const parts = src.kind === 'youtube' ? [{ file_data: { file_uri: src.url } }, { text: prompt }] : [{ text: prompt }];
-    const body = { contents: [{ role: 'user', parts }], generationConfig: { temperature: 0.4 } };
-    if (src.kind === 'url') body.tools = [{ url_context: {} }];       // 웹 글 주소를 직접 읽게 함
-    else body.generationConfig.responseMimeType = 'application/json';
-    // 혼잡(503)·한도(429)면 잠깐 기다렸다 재시도 → 그래도 안 되면 다른 모델로
-    const models = candidates(first);
-    let lastErr = null;
+    const yt = src.kind === 'youtube';
+    const plain = (parts) => ({ contents: [{ role: 'user', parts }], generationConfig: { temperature: 0.4 } });
+    let body;
+    if (yt) {
+      // 영상은 무겁다: 앞 10분만, 저화질로 보게 해서 처리량을 1/3 수준으로 줄인다 (말소리는 그대로)
+      body = plain([{ fileData: { fileUri: src.url }, videoMetadata: { startOffset: '0s', endOffset: '600s' } }, { text: prompt }]);
+      body.generationConfig.mediaResolution = 'MEDIA_RESOLUTION_LOW';
+      body.generationConfig.responseMimeType = 'application/json';
+    } else {
+      body = plain([{ text: prompt }]);
+      if (src.kind === 'url') body.tools = [{ url_context: {} }];      // 웹 글 주소를 직접 읽게 함
+      else body.generationConfig.responseMimeType = 'application/json';
+    }
+    const timeout = yt ? 100000 : 60000;
+    // 영상은 오래 걸리니 모델 2개까지만, 같은 모델 재시도 없이. 글은 혼잡하면 한 번 기다렸다 재시도.
+    const models = candidates(first).slice(0, yt ? 2 : 4);
+    let lastErr = null, simplified = false;
     for (let i = 0; i < models.length; i++) {
       const model = models[i];
-      for (let attempt = 0; attempt < (i === 0 ? 2 : 1); attempt++) {
+      const tries = (!yt && i === 0) ? 2 : 1;
+      for (let attempt = 0; attempt < tries; attempt++) {
         try {
-          if (i > 0 || attempt > 0) setBusy(true, i > 0 ? '혼잡해서 다른 모델로 시도 중… (' + model + ')' : '혼잡해서 다시 시도 중…');
-          return await callGemini(model, body);
+          if (i > 0) busyLabel('혼잡해서 다른 모델로 시도 중');
+          else if (attempt > 0) busyLabel('혼잡해서 다시 시도 중');
+          return await callGemini(model, body, timeout);
         } catch (e) {
           lastErr = e;
-          if (e.status === 404) break;                     // 없어진 모델 → 다음 모델
-          if (e.busy || e.status === 429) { if (attempt === 0 && i === 0) await sleep(2500); continue; }
-          i = models.length; break;                        // 그 밖의 오류는 바로 처리
+          if (e.cancelled) throw e;
+          // 영상 옵션(구간·저화질)을 지원하지 않는 모델이면 기본 방식으로 한 번 더
+          if (yt && e.status === 400 && !simplified) {
+            simplified = true;
+            body = plain([{ fileData: { fileUri: src.url } }, { text: prompt }]);
+            attempt--; continue;
+          }
+          if (e.status === 404) break;
+          if (e.busy || e.status === 429 || e.timeout) { if (!yt && attempt === 0 && i === 0) await sleep(2500); continue; }
+          i = models.length; break;
         }
       }
     }
-    try {
-      throw lastErr || new Error('추출하지 못했어요.');
-    } catch (e) {
-      if (e.status === 404) { lsSet('poly_gemini_model', null); throw new Error('모델 목록이 바뀌었어요. 한 번 더 눌러 주세요.'); }
-      if (src.kind === 'youtube' && e.status === 400) throw new Error('이 영상을 읽지 못했어요 (비공개·연령제한 영상이거나 지원되지 않음). 유튜브 [스크립트 표시]의 자막을 복사해 붙여넣어 주세요.');
-      if (src.kind === 'url' && e.status === 400) throw new Error('이 페이지를 읽지 못했어요. 글 내용을 복사해 붙여넣어 주세요.');
-      throw e;
+    const e = lastErr || new Error('추출하지 못했어요.');
+    if (e.status === 404) { lsSet('poly_gemini_model', null); throw new Error('모델 목록이 바뀌었어요. 한 번 더 눌러 주세요.'); }
+    if (yt) {
+      const why = e.timeout ? '영상 분석이 너무 오래 걸려요.' : e.busy || e.status === 429 ? 'Gemini 서버가 지금 혼잡해요.' : e.status === 400 ? '이 영상을 읽지 못했어요 (비공개·연령제한 등).' : (e.message || '영상을 처리하지 못했어요.');
+      const err = new Error(why + '\n👉 [📋 채팅으로 하기]를 누르고 Gemini 앱에 붙여넣으면 영상을 직접 보고 추출해 줘요.\n👉 또는 유튜브 [스크립트 표시]의 자막을 복사해 붙여넣어 주세요.');
+      throw err;
     }
+    if (src.kind === 'url' && e.status === 400) throw new Error('이 페이지를 읽지 못했어요. 글 내용을 복사해 붙여넣어 주세요.');
+    throw e;
   }
 
   /* ---------- 화면 ---------- */
@@ -163,7 +193,8 @@
     renderKeyState();
     showStep('input');
   };
-  window.closeFind = function () { $('m-find').classList.add('hidden'); $('overlay').classList.add('hidden'); };
+  window.closeFind = function () {
+    if (ctrl) { try { ctrl.abort(); } catch (e) { } } $('m-find').classList.add('hidden'); $('overlay').classList.add('hidden'); };
 
   function showStep(s) {
     ['input', 'paste', 'result', 'key'].forEach((x) => $('fx-' + x).classList.toggle('hidden', x !== s));
@@ -177,9 +208,14 @@
     $('fx-go').textContent = k ? '✨ 표현 추출하기' : '✨ Gemini 연결하고 추출하기';
   }
 
+  let busyText = '', busyT0 = 0, busyTimer = null;
+  function paintBusy() { $('fx-go').textContent = busyText + ' · ' + Math.round((Date.now() - busyT0) / 1000) + '초'; }
+  function busyLabel(t) { busyText = t; paintBusy(); }
   function setBusy(on, msg) {
     const b = $('fx-go'); b.disabled = on; b.style.opacity = on ? '0.6' : '';
-    if (on) b.textContent = msg || '추출 중…'; else renderKeyState();
+    clearInterval(busyTimer); busyTimer = null;
+    if (on) { busyText = msg || '추출 중'; busyT0 = Date.now(); paintBusy(); busyTimer = setInterval(paintBusy, 1000); }
+    else renderKeyState();
   }
   function setMsg(m) { $('fx-msg').textContent = m || ''; }
 
@@ -189,14 +225,14 @@
     if (!key()) { showStep('key'); return; }
     if (!navigator.onLine) { setMsg('인터넷 연결이 필요해요.'); return; }
     const src = classify(raw);
-    setMsg(''); setBusy(true, src.kind === 'youtube' ? '영상 보는 중… (1분 정도 걸릴 수 있어요)' : '추출 중…');
+    setMsg(''); setBusy(true, src.kind === 'youtube' ? '영상 보는 중 (최대 2~3분)' : '추출 중');
     try {
       const text = await extractWithGemini(src);
       const items = parseItems(text);
       if (!items.length) throw new Error('표현을 찾지 못했어요. 다른 글로 해 보거나 [📋 채팅으로 하기]를 써 주세요.');
       showResults(items, src);
     } catch (e) {
-      setMsg(e && e.message ? e.message : '추출하지 못했어요.');
+      if (!(e && e.cancelled)) setMsg(e && e.message ? e.message : '추출하지 못했어요.');
     } finally { setBusy(false); }
   };
 
