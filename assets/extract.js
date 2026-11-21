@@ -84,6 +84,7 @@
     names.sort((a, b) => score(b) - score(a));
     if (!names.length) throw new Error('사용할 수 있는 Gemini 모델을 찾지 못했어요.');
     lsSet('poly_gemini_model', names[0]);
+    lsSet('poly_gemini_models', JSON.stringify(names.slice(0, 6)));
     return names[0];
   }
 
@@ -92,6 +93,7 @@
     try { const j = await r.json(); msg = (j.error && j.error.message) || ''; } catch (e) { }
     if (r.status === 400 && /api key/i.test(msg)) return new Error('API 키가 올바르지 않아요. 설정에서 다시 확인해 주세요.');
     if (r.status === 403) return new Error('API 키 권한이 없어요. (키 제한 설정이나 결제 상태를 확인해 주세요)');
+    if (r.status === 503 || r.status === 500 || /high demand|overloaded|unavailable/i.test(msg)) { const e = new Error('Gemini 서버가 지금 혼잡해요. 잠시 뒤 다시 하거나 [📋 채팅으로 하기]를 써 주세요.'); e.status = r.status || 503; e.busy = true; return e; }
     if (r.status === 429) return new Error('무료 사용 한도를 넘었어요. 잠시 뒤 다시 하거나 [📋 채팅으로 하기]를 써 주세요.');
     const e = new Error((msg || ('오류 ' + r.status)).slice(0, 200)); e.status = r.status; return e;
   }
@@ -111,18 +113,41 @@
     return text;
   }
 
+  const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+  function candidates(first) {
+    let list = [];
+    try { list = JSON.parse(lsGet('poly_gemini_models', '[]')) || []; } catch (e) { }
+    return [first].concat(list.filter((m) => m !== first)).slice(0, 4);
+  }
   async function extractWithGemini(src) {
-    let model = await pickModel(false);
+    // 예전 버전에서 연결한 경우 예비 모델 목록이 없으므로 새로 받아 둔다
+    const first = lsGet('poly_gemini_models', '') ? await pickModel(false) : await pickModel(true);
     const prompt = buildPrompt(src, false);
     const parts = src.kind === 'youtube' ? [{ file_data: { file_uri: src.url } }, { text: prompt }] : [{ text: prompt }];
     const body = { contents: [{ role: 'user', parts }], generationConfig: { temperature: 0.4 } };
     if (src.kind === 'url') body.tools = [{ url_context: {} }];       // 웹 글 주소를 직접 읽게 함
     else body.generationConfig.responseMimeType = 'application/json';
+    // 혼잡(503)·한도(429)면 잠깐 기다렸다 재시도 → 그래도 안 되면 다른 모델로
+    const models = candidates(first);
+    let lastErr = null;
+    for (let i = 0; i < models.length; i++) {
+      const model = models[i];
+      for (let attempt = 0; attempt < (i === 0 ? 2 : 1); attempt++) {
+        try {
+          if (i > 0 || attempt > 0) setBusy(true, i > 0 ? '혼잡해서 다른 모델로 시도 중… (' + model + ')' : '혼잡해서 다시 시도 중…');
+          return await callGemini(model, body);
+        } catch (e) {
+          lastErr = e;
+          if (e.status === 404) break;                     // 없어진 모델 → 다음 모델
+          if (e.busy || e.status === 429) { if (attempt === 0 && i === 0) await sleep(2500); continue; }
+          i = models.length; break;                        // 그 밖의 오류는 바로 처리
+        }
+      }
+    }
     try {
-      return await callGemini(model, body);
+      throw lastErr || new Error('추출하지 못했어요.');
     } catch (e) {
-      // 저장된 모델이 없어졌으면 다시 골라서 한 번 더
-      if (e.status === 404) { model = await pickModel(true); return await callGemini(model, body); }
+      if (e.status === 404) { lsSet('poly_gemini_model', null); throw new Error('모델 목록이 바뀌었어요. 한 번 더 눌러 주세요.'); }
       if (src.kind === 'youtube' && e.status === 400) throw new Error('이 영상을 읽지 못했어요 (비공개·연령제한 영상이거나 지원되지 않음). 유튜브 [스크립트 표시]의 자막을 복사해 붙여넣어 주세요.');
       if (src.kind === 'url' && e.status === 400) throw new Error('이 페이지를 읽지 못했어요. 글 내용을 복사해 붙여넣어 주세요.');
       throw e;

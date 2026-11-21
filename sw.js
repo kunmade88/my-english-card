@@ -1,5 +1,5 @@
 /* 오프라인 캐시. 파일을 바꾸면 VERSION 을 올려 주세요. */
-const VERSION = 'poly-v14-1';
+const VERSION = 'poly-v14-2';
 const ASSETS = [
   './', './index.html', './manifest.webmanifest',
   './icon-192.png', './icon-512.png',
